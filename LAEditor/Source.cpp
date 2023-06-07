@@ -76,6 +76,7 @@ float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
 bool keepCursorInFrame = false;
 bool firstMouse = true;
+bool is3DViewerFocused = true;
 // camera
 glm::vec3 cameraPos = glm::vec3(10.0f, 3.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -111,8 +112,8 @@ int main()
 
 	renderConfig();
 	// load shaders
-	Shader basicShader = Shader("basic.vs", "basic.fs");
-	Shader modelShader("model.vs", "model.fs");
+	Shader basicShader = Shader("basic.vert", "basic.frag");
+	Shader modelShader("model.vert", "model.frag");
 	// load models
 	create_triangle();
 	Model ourModel("backpack/backpack.obj");
@@ -137,6 +138,7 @@ int main()
 		showDemoWindow();
 		showDebugGui();
 		ImGui::Begin("3D Viewer");
+		is3DViewerFocused = ImGui::IsWindowFocused();
 		setCursorPos(mainWindow);
 		setImGuiTexture();
 		const float window_width = ImGui::GetContentRegionAvail().x;
@@ -282,11 +284,10 @@ void ImGuiNewFrames() {
 	ImGui_ImplGlfw_NewFrame();
 }
 void setCursorPos(GLFWwindow* window) {
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float window_width = ImGui::GetContentRegionAvail().x;
+	const float window_height = ImGui::GetContentRegionAvail().y;
 	if (keepCursorInFrame) {
-
-		ImVec2 pos = ImGui::GetCursorScreenPos();
-		const float window_width = ImGui::GetContentRegionAvail().x;
-		const float window_height = ImGui::GetContentRegionAvail().y;
 
 		double xPos, yPos;
 		glfwGetCursorPos(window, &xPos, &yPos);
@@ -409,25 +410,28 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	camera.ProcessMouseMovement(xoffset, yoffset, true);
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	camera.ProcessMouseScroll((float)yoffset);
+	if (is3DViewerFocused)
+		camera.ProcessMouseScroll((float)yoffset);
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
-		keepCursorInFrame = true;
-		camera.canOrbit = true;
-	}
-	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
-		keepCursorInFrame = false;
-		camera.canOrbit = false;
-	}
-	if (button == GLFW_MOUSE_BUTTON_5 && action == GLFW_PRESS) {
-		keepCursorInFrame = true;
-		camera.isMousePan = true;
-		camera.canOrbit = true;
-	}
-	if (button == GLFW_MOUSE_BUTTON_5 && action == GLFW_RELEASE) {
-		keepCursorInFrame = false;
-		camera.isMousePan = false;
-		camera.canOrbit = false;
+	if (is3DViewerFocused) {
+		if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
+			keepCursorInFrame = true;
+			camera.canOrbit = true;
+		}
+		if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
+			keepCursorInFrame = false;
+			camera.canOrbit = false;
+		}
+		if (button == GLFW_MOUSE_BUTTON_5 && action == GLFW_PRESS) {
+			keepCursorInFrame = true;
+			camera.isMousePan = true;
+			camera.canOrbit = true;
+		}
+		if (button == GLFW_MOUSE_BUTTON_5 && action == GLFW_RELEASE) {
+			keepCursorInFrame = false;
+			camera.isMousePan = false;
+			camera.canOrbit = false;
+		}
 	}
 }

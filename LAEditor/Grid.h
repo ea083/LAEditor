@@ -39,7 +39,7 @@ public:
 	}
 
 private:
-	Shader gridShader = Shader("grid.vs", "grid.fs");
+	Shader gridShader = Shader("grid.vert", "grid.frag");
 	float gridVertices[12] = {
 			0.5f, 0.0f,  0.5f, // top right
 			0.5f, 0.0f, -0.5f, // bottom right

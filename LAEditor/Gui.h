@@ -71,7 +71,13 @@ private:
             // use ofn.lpstrFile here
             std::cout << (CW2A)ofn.lpstrFile << std::endl;
             model->test();
-            model->replaceModel((std::string)(CW2A)ofn.lpstrFile);
+            std::string path = (std::string)(CW2A)ofn.lpstrFile;
+            for (unsigned int i = 0; i < path.length(); i++) {
+                if(path[i] == '\\') {
+                    path[i] = '/';
+                }
+            }
+            model->replaceModel(path);
         }
     }
 };

@@ -38,6 +38,7 @@ public:
 	void replaceModel(std::string const &path, bool gamma = false) {
 		textures_loaded.clear();
 		meshes.clear();
+		directory.clear();
 		loadModel(path);
 	}
 
@@ -199,6 +200,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 	}
 	else {
 		std::cout << "Texture failed to load at path: " << path << std::endl;
+		std::cout << "Texture failed to load at path: " << filename << std::endl;
 		stbi_image_free(data);
 	}
 

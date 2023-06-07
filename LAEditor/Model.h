@@ -34,6 +34,17 @@ public:
 	Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma) {
 		loadModel(path);
 	}
+
+	void replaceModel(std::string const &path, bool gamma = false) {
+		textures_loaded.clear();
+		meshes.clear();
+		loadModel(path);
+	}
+
+	void test() {
+		std::cout << "test passed" << std::endl;
+	}
+
 	void Draw(Shader& shader) {
 		for (unsigned int i = 0; i < meshes.size(); i++)
 			meshes[i].Draw(shader);

@@ -42,6 +42,9 @@ public:
             ImGui::EndMainMenuBar();
         }
 	}
+    bool cursorIn3DViewport() {
+
+    }
 private:
     GLFWwindow* window;
     Model* model;

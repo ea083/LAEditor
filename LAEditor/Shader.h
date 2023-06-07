@@ -154,6 +154,12 @@ public:
 	{
 		glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 	}
+	// ------------------------------------------------------------------------
+	void setMatrices(const glm::mat4& projection, const glm::mat4& view, const glm::mat4& model) {
+		setMat4("projection", projection);
+		setMat4("view", view);
+		setMat4("model", model);
+	}
 private:
 	// check for shader compilation
 	void checkCompileErrors(unsigned int shader, std::string type) {

@@ -14,6 +14,7 @@
 #include "Camera.h"
 #include "Model.h"
 #include "Grid.h"
+#include "Gui.h"
 
 #include <iostream>
 #include <string>
@@ -69,6 +70,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 const int WIDTH = 800, HEIGHT = 600;
 int currWidth = WIDTH, currHeight = HEIGHT;
 Framebuffer frame;
+// Gui
 // cursor
 float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
@@ -92,7 +94,7 @@ int main()
 {
 	if (!startGlfw())
 		return 1;
-	GLFWwindow* mainWindow = createWindow(WIDTH, HEIGHT, "My Window");
+	GLFWwindow* mainWindow = createWindow(WIDTH, HEIGHT, "Llama Asset Editor");
 	if (!mainWindow)
 		return 1;
 
@@ -118,6 +120,8 @@ int main()
 	Grid grid = Grid();
 	// init framebuffers
 	frame.initFrameBuffer(WIDTH, HEIGHT); 
+	// create gui
+	Gui gui = Gui(mainWindow, &ourModel);
 
 	ImGuiIO& io = getImGuiIO();
 	initImGui(mainWindow);
@@ -126,15 +130,10 @@ int main()
 	{
 		updateDeltaTime();
 		processInput(mainWindow);
-
 		ImGuiNewFrames(); 
-
-		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		createDockSpace(io);
- 
 		ImGui::NewFrame();
+		gui.showMainMenuBar();
 		showDemoWindow();
 		showDebugGui();
 		ImGui::Begin("3D Viewer");
@@ -142,14 +141,11 @@ int main()
 		setImGuiTexture();
 		const float window_width = ImGui::GetContentRegionAvail().x;
 		const float window_height = ImGui::GetContentRegionAvail().y;
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)window_width / (float)window_height, 0.1f, 100.0f);
 		ImGui::End();
 		ImGui::Render();
 
-
-
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)window_width / (float)window_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
-
 		frame.bindFramebuffer();
 
 		glEnable(GL_DEPTH_TEST);
@@ -157,12 +153,10 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		modelShader.use();
-		modelShader.setMat4("projection", projection);
-		modelShader.setMat4("view", view);
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f));
 		model = glm::scale(model, glm::vec3(1.0f));
-		modelShader.setMat4("model", model);
+		modelShader.setMatrices(projection, view, model);
 		modelShader.setVec3("cameraPos", camera.Position); 
 		ourModel.Draw(modelShader);
 

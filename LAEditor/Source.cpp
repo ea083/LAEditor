@@ -24,29 +24,6 @@
 GLuint VAO, VBO;
 
 
-void PickingPhase(float width, float height, Model model);
-
-void create_triangle()
-{
-	float vertices[] = {
-		-1.0f, -1.0f, 0.0f, // 1. vertex x, y, z
-		1.0f, -1.0f, 0.0f, // 2. vertex ...
-		0.0f, 1.0f, 0.0f // etc... 
-	};
-
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
 bool startGlfw();
 GLFWwindow* createWindow(int width, int height, const char* name);
 void setCallBackFuncs(GLFWwindow* window);
@@ -74,6 +51,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // window
 const int WIDTH = 800, HEIGHT = 600;
 int currWidth = WIDTH, currHeight = HEIGHT;
+float curr3DViewerWidth = currWidth, curr3DViewerHeight = currHeight;
+float curr3DViewerXPos = 0, curr3DViewerYPos = 0;
 Framebuffer frame;
 // cursor
 Mouse mouse = Mouse(WIDTH / 2.0f, HEIGHT / 2.0f);
@@ -88,9 +67,6 @@ Camera camera(cameraPos, cameraUp, yaw, pitch, true);
 // timing
 float deltaTime = 0.0f; // time between current frame and last frame
 float lastFrame = 0.0f; // time of last frame
-// picking
-PickingTexture pickingTexture;
-//Shader pickingShader = Shader("picking.vert", "picking.frag");
 // debug
 float uv0 = 0.0, uv1 = 1.0, uv2 = 1.0, uv3 = 0.0;
 
@@ -119,7 +95,6 @@ int main()
 	Shader modelShader("model.vert", "model.frag");
 	Shader vertShader("vertice.vert", "vertice.frag");
 	// load models
-	create_triangle();
 	Model ourModel("test.obj");
 	// create grid
 	Grid grid = Grid();
@@ -127,8 +102,6 @@ int main()
 	frame.initFrameBuffer(WIDTH, HEIGHT); 
 	// create gui
 	Gui gui = Gui(mainWindow, &ourModel);
-	// create picker
-	pickingTexture.init(WIDTH, HEIGHT);
 
 	ImGuiIO& io = getImGuiIO();
 	initImGui(mainWindow);
@@ -152,11 +125,13 @@ int main()
 		setImGuiTexture();
 		const float window_width = ImGui::GetContentRegionAvail().x;
 		const float window_height = ImGui::GetContentRegionAvail().y;
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		curr3DViewerWidth = window_width;
+		curr3DViewerHeight = window_height;
+		curr3DViewerXPos = pos.x;
+		curr3DViewerYPos = pos.y;
 		ImGui::End();
 		ImGui::Render();
-
-		//if (mouse.getisLMBPressed())
-			//PickingPhase(window_width, window_height, ourModel);
 
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)window_width / (float)window_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
@@ -165,8 +140,6 @@ int main()
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.15f, 0.161f, 0.22f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
 
 		modelShader.use();
 		glm::mat4 model = glm::mat4(1.0f);
@@ -183,6 +156,10 @@ int main()
 		grid.render(projection, view, camera.Position, camera.Radius);
 
 		frame.unbindFramebuffer();
+
+		if (mouse.getisLMBPressed()) {
+			
+		}
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -207,19 +184,6 @@ int main()
 	glfwTerminate();
 
 	return 0;
-}
-
-void PickingPhase(float width, float height, Model model) {
-	pickingTexture.enableWriting();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//pickingShader.use();
-
-	glm::mat4 modelM = glm::mat4(1.0f);
-	glm::mat4 view = camera.GetViewMatrix();
-	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)width / (float)height, 0.1f, 100.0f);
-	//pickingShader.setMatrices(projection, view, modelM);
-	//model.Draw(pickingShader);
-	pickingTexture.disableWriting();
 }
 
 bool startGlfw() {

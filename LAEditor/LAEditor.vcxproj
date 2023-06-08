@@ -165,6 +165,8 @@
     <ClInclude Include="Gui.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="Mouse.h" />
+    <ClInclude Include="PickingTexture.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
@@ -179,6 +181,10 @@
     <None Include="grid.vert" />
     <None Include="model.frag" />
     <None Include="model.vert" />
+    <None Include="picking.frag" />
+    <None Include="picking.vert" />
+    <None Include="vertice.frag" />
+    <None Include="vertice.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

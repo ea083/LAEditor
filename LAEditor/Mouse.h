@@ -1,5 +1,10 @@
 #pragma once
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+//#include "Model.h"
+#include <iostream>
+
 class Mouse {
 public:
 	Mouse() {}
@@ -11,6 +16,7 @@ public:
 		this->lastX = lastX;
 		this->lastY = lastY;
 	}
+
 	void setLastX(float lastX) {
 		this->lastX = lastX;
 	}
@@ -45,4 +51,5 @@ private:
 
 	bool isLMBPressed = false;
 	int xPos = 0, yPos = 0;
+
 };

@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <atlstr.h>
 
+#include "Model.h"
+
 class Gui {
 public:
 

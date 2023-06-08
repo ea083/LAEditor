@@ -23,6 +23,26 @@
 
 unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false);
 
+struct displayVertex {
+	glm::vec3 Position;
+	glm::vec3 Normal;
+	glm::vec2 TexCoords;
+	glm::vec3 Tangent;
+	glm::vec3 Bitangent;
+	vector<Vertex*> children;
+	bool operator==(const displayVertex& other) const {
+		return Position == other.Position;
+	}
+	void setPos(glm::vec3 newPos) {
+		Position = newPos;
+		for (int i = 0; i < children.size(); i++) {
+			children[i]->Position = newPos;
+			if (children[i]->mesh != nullptr)
+				children[i]->mesh->updateVertexPos();
+		}
+	}
+};
+
 class Model {
 public:
 	// model data
@@ -30,6 +50,8 @@ public:
 	std::vector<Mesh> meshes;
 	std::string directory;
 	bool gammaCorrection; 
+
+	std::vector<displayVertex> origVertices;
 
 	Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma) {
 		loadModel(path);
@@ -39,16 +61,16 @@ public:
 		textures_loaded.clear();
 		meshes.clear();
 		directory.clear();
+		origVertices.clear();
 		loadModel(path);
 	}
 
-	void test() {
-		std::cout << "test passed" << std::endl;
-	}
-
-	void Draw(Shader& shader) {
+	void Draw(Shader& shader, Shader* vertShader = NULL, bool textured = false) {
 		for (unsigned int i = 0; i < meshes.size(); i++)
-			meshes[i].Draw(shader);
+			if(vertShader != NULL)
+				meshes[i].Draw(shader, vertShader, textured);
+			else
+				meshes[i].Draw(shader, NULL, textured);
 	}
 private:
 	void loadModel(std::string path) {
@@ -60,14 +82,46 @@ private:
 			return;
 		}
 		directory = path.substr(0, path.find_last_of('/'));
+		processOrigVertices(scene);
 		processNode(scene->mRootNode, scene);
+		processDisplayVertChildren();
 	}
+
+	void processDisplayVertChildren() {
+		for (int i = 0; i < meshes.size(); i++) {
+			for (int j = 0; j < meshes[i].vertices.size(); j++) {
+				for (int k = 0; k < origVertices.size(); k++) {
+					if (origVertices[k].Position == meshes[i].vertices[j].Position) {
+						origVertices[k].children.push_back(&meshes[i].vertices[j]);
+					}
+				}
+			}
+		}
+	}
+
+	void processOrigVertices(const aiScene* scene) {
+		for (int meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++) {
+			for (int vertexIndex = 0; vertexIndex < scene->mMeshes[meshIndex]->mNumVertices; vertexIndex++) {
+				displayVertex vertex;
+				vertex.Position.x = scene->mMeshes[meshIndex]->mVertices[vertexIndex].x;
+				vertex.Position.y = scene->mMeshes[meshIndex]->mVertices[vertexIndex].y;
+				vertex.Position.z = scene->mMeshes[meshIndex]->mVertices[vertexIndex].z;
+				auto it = std::find(origVertices.begin(), origVertices.end(), vertex);
+				if(it == origVertices.end())
+					origVertices.push_back(vertex);
+			}
+		}
+	}
+
 
 	void processNode(aiNode* node, const aiScene* scene) {
 		// process all the node's meshes (if any)
 		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 			meshes.push_back(processMesh(mesh, scene));
+			for (int i = 0; i < meshes[meshes.size() - 1].vertices.size(); i++) {
+				meshes[meshes.size() - 1].vertices[i].mesh = &meshes[meshes.size() - 1];
+			}
 		}
 		// then do the same for each of its children
 		for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -87,6 +141,23 @@ private:
 			vector.y = mesh->mVertices[i].y;
 			vector.z = mesh->mVertices[i].z;
 			vertex.Position = vector;
+
+			//displayVertex dvertex;
+			//dvertex.Position.x = vector.x;
+			//dvertex.Position.y = vector.y;
+			//dvertex.Position.z = vector.z;
+			//for (int i = 0; i < origVertices.size(); i++) {
+			//	if (origVertices[i].Position == dvertex.Position) {
+			//		origVertices[i].children.push_back(&vertex);
+			//	}
+			//}
+
+			//auto it = std::find(origVertices.begin(), origVertices.end(), dvertex);
+			//if (it != origVertices.end()) {
+			//	displayVertex parentVertex = *it;
+			//	parentVertex.children.push_back(&vertex);
+			//}
+
 
 			if (mesh->HasNormals()) {
 				vector.x = mesh->mNormals[i].x;
@@ -113,6 +184,7 @@ private:
 			}
 			else
 				vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+			
 
 			vertices.push_back(vertex);
 		}
@@ -140,7 +212,8 @@ private:
 
 		}
 
-		return Mesh(vertices, indices, textures);
+		Mesh currMesh = Mesh(vertices, indices, textures);
+		return currMesh;
 	}
 
 	std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName) {

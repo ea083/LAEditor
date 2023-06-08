@@ -104,6 +104,12 @@
     <ClInclude Include="Gui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PickingTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mouse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="dependencies.txt">
@@ -130,6 +136,18 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="model.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="vertice.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="vertice.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="picking.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="picking.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

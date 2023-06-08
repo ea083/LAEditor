@@ -15,11 +15,16 @@
 #include "Model.h"
 #include "Grid.h"
 #include "Gui.h"
+#include "Mouse.h"
+#include "PickingTexture.h"
 
 #include <iostream>
 #include <string>
 
 GLuint VAO, VBO;
+
+
+void PickingPhase(float width, float height, Model model);
 
 void create_triangle()
 {
@@ -70,13 +75,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 const int WIDTH = 800, HEIGHT = 600;
 int currWidth = WIDTH, currHeight = HEIGHT;
 Framebuffer frame;
-// Gui
 // cursor
-float lastX = WIDTH / 2.0f;
-float lastY = HEIGHT / 2.0f;
-bool keepCursorInFrame = false;
-bool firstMouse = true;
-bool is3DViewerFocused = true;
+Mouse mouse = Mouse(WIDTH / 2.0f, HEIGHT / 2.0f);
 // camera
 glm::vec3 cameraPos = glm::vec3(10.0f, 3.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -88,6 +88,9 @@ Camera camera(cameraPos, cameraUp, yaw, pitch, true);
 // timing
 float deltaTime = 0.0f; // time between current frame and last frame
 float lastFrame = 0.0f; // time of last frame
+// picking
+PickingTexture pickingTexture;
+//Shader pickingShader = Shader("picking.vert", "picking.frag");
 // debug
 float uv0 = 0.0, uv1 = 1.0, uv2 = 1.0, uv3 = 0.0;
 
@@ -114,15 +117,18 @@ int main()
 	// load shaders
 	Shader basicShader = Shader("basic.vert", "basic.frag");
 	Shader modelShader("model.vert", "model.frag");
+	Shader vertShader("vertice.vert", "vertice.frag");
 	// load models
 	create_triangle();
-	Model ourModel("backpack/backpack.obj");
+	Model ourModel("test.obj");
 	// create grid
 	Grid grid = Grid();
 	// init framebuffers
 	frame.initFrameBuffer(WIDTH, HEIGHT); 
 	// create gui
 	Gui gui = Gui(mainWindow, &ourModel);
+	// create picker
+	pickingTexture.init(WIDTH, HEIGHT);
 
 	ImGuiIO& io = getImGuiIO();
 	initImGui(mainWindow);
@@ -137,8 +143,11 @@ int main()
 		gui.showMainMenuBar();
 		showDemoWindow();
 		showDebugGui();
+		ImGui::Begin("Object Inspector");
+		gui.showObjectData();
+		ImGui::End();
 		ImGui::Begin("3D Viewer");
-		is3DViewerFocused = ImGui::IsWindowFocused();
+		mouse.setis3DViewerFocused(ImGui::IsWindowFocused());
 		setCursorPos(mainWindow);
 		setImGuiTexture();
 		const float window_width = ImGui::GetContentRegionAvail().x;
@@ -146,13 +155,18 @@ int main()
 		ImGui::End();
 		ImGui::Render();
 
+		//if (mouse.getisLMBPressed())
+			//PickingPhase(window_width, window_height, ourModel);
+
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)window_width / (float)window_height, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 		frame.bindFramebuffer();
 
 		glEnable(GL_DEPTH_TEST);
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.15f, 0.161f, 0.22f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
 
 		modelShader.use();
 		glm::mat4 model = glm::mat4(1.0f);
@@ -160,7 +174,11 @@ int main()
 		model = glm::scale(model, glm::vec3(1.0f));
 		modelShader.setMatrices(projection, view, model);
 		modelShader.setVec3("cameraPos", camera.Position); 
-		ourModel.Draw(modelShader);
+		vertShader.use();
+		vertShader.setMatrices(projection, view, model);
+		vertShader.setVec3("viewPos", camera.Position);
+		vertShader.setFloat("offset", uv0);
+		ourModel.Draw(modelShader, &vertShader, false);
 
 		grid.render(projection, view, camera.Position, camera.Radius);
 
@@ -189,6 +207,19 @@ int main()
 	glfwTerminate();
 
 	return 0;
+}
+
+void PickingPhase(float width, float height, Model model) {
+	pickingTexture.enableWriting();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//pickingShader.use();
+
+	glm::mat4 modelM = glm::mat4(1.0f);
+	glm::mat4 view = camera.GetViewMatrix();
+	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)width / (float)height, 0.1f, 100.0f);
+	//pickingShader.setMatrices(projection, view, modelM);
+	//model.Draw(pickingShader);
+	pickingTexture.disableWriting();
 }
 
 bool startGlfw() {
@@ -287,7 +318,7 @@ void setCursorPos(GLFWwindow* window) {
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	const float window_width = ImGui::GetContentRegionAvail().x;
 	const float window_height = ImGui::GetContentRegionAvail().y;
-	if (keepCursorInFrame) {
+	if (mouse.getkeepCursorInFrame()) {
 
 		double xPos, yPos;
 		glfwGetCursorPos(window, &xPos, &yPos);
@@ -373,7 +404,7 @@ unsigned int loadCubemap(std::vector<std::string> faces) {
 void showDebugGui() {
 
 	ImGui::Begin("Debug");
-	ImGui::DragFloat("UV0", &uv0, 0.5f);
+	ImGui::DragFloat("UV0", &uv0, 0.005f);
 	ImGui::DragFloat("UV1", &uv1, 0.5f);
 	ImGui::DragFloat("UV2", &uv2, 0.5f);
 	ImGui::DragFloat("UV3", &uv3, 0.5f);
@@ -390,15 +421,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	currHeight = height;
 }
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	if (firstMouse) {
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
+	mouse.setxPos(xpos);
+	mouse.setyPos(ypos);
+	if (mouse.getfirstMouse()) {
+		mouse.setLastX(xpos);
+		mouse.setLastY(ypos);
+		mouse.setfirstMouse(false);
 	}
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top.
-	lastX = xpos;
-	lastY = ypos;
+	float xoffset = xpos - mouse.getLastX();
+	float yoffset = mouse.getLastY() - ypos; // reversed since y-coordinates range from bottom to top.
+	mouse.setLastX(xpos);
+	mouse.setLastY(ypos);
 	if (xoffset > WIDTH / 2.0)
 		return;
 	if (yoffset > HEIGHT / 2.0)
@@ -410,28 +443,31 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	camera.ProcessMouseMovement(xoffset, yoffset, true);
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	if (is3DViewerFocused)
+	if (mouse.getis3DViewerFocused())
 		camera.ProcessMouseScroll((float)yoffset);
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (is3DViewerFocused) {
+	if (mouse.getis3DViewerFocused()) {
 		if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
-			keepCursorInFrame = true;
+			mouse.setKeepCursorInFrame(true);
 			camera.canOrbit = true;
 		}
 		if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
-			keepCursorInFrame = false;
+			mouse.setKeepCursorInFrame(false);
 			camera.canOrbit = false;
 		}
 		if (button == GLFW_MOUSE_BUTTON_5 && action == GLFW_PRESS) {
-			keepCursorInFrame = true;
+			mouse.setKeepCursorInFrame(true);
 			camera.isMousePan = true;
 			camera.canOrbit = true;
 		}
 		if (button == GLFW_MOUSE_BUTTON_5 && action == GLFW_RELEASE) {
-			keepCursorInFrame = false;
+			mouse.setKeepCursorInFrame(false);
 			camera.isMousePan = false;
 			camera.canOrbit = false;
+		}
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			mouse.setisLMBPressed(action == GLFW_PRESS);
 		}
 	}
 }

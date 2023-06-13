@@ -11,6 +11,10 @@
 class Grid {
 public:
 	Grid() {
+
+	}
+
+	void initGrid() {
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
 		glGenBuffers(1, &EBO);
@@ -21,6 +25,8 @@ public:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gridIndices), gridIndices, GL_STATIC_DRAW);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
+
+		gridShader = Shader("grid.vert", "grid.frag");
 	}
 
 	void render(glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, float radius) {
@@ -39,7 +45,7 @@ public:
 	}
 
 private:
-	Shader gridShader = Shader("grid.vert", "grid.frag");
+	Shader gridShader;
 	float gridVertices[12] = {
 			0.5f, 0.0f,  0.5f, // top right
 			0.5f, 0.0f, -0.5f, // bottom right

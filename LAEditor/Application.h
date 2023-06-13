@@ -1,31 +1,24 @@
 #pragma once
-//#include "imgui.h"
-//#include "imgui_impl_glfw.h"
-//#include "imgui_impl_opengl3.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-//#include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
-//#include <glm/gtc/type_ptr.hpp>
+#include "Utilities.h"
 
-//#include "Framebuffer.h"
+#include "Framebuffer.h"
 //#include "Shader.h"
 #include "Camera.h"
-//#include "Model.h"
-//#include "Grid.h"
-//#include "Gui.h"
+#include "Model.h"
+#include "Grid.h"
+#include "Gui.h"
 #include "Mouse.h"
-//#include "PickingTexture.h"
+#include "Window.h"
 
 #include <iostream>
 #include <string>
-
-
-struct Window {
-	int bufferWidth, bufferHeight;
-};
 
 static const unsigned int WIN_WIDTH = 800, WIN_HEIGHT = 600;
 
@@ -35,16 +28,49 @@ public:
 	Application();
 	~Application();
 
-private:
-	static GLFWwindow* mainWindow;
-	static Window mainWindowInfo;
-	static Mouse mouse;
-	static Camera camera;
+	void init();
 
-	static bool startGLFW();
-	static bool createWindow(int width, int height, const char* name);
-	static bool createDefaultWindow();
-	
-	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-	static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+	void RenderLoop();
+
+	void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+	void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+	void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+	void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+
+	Window* getWindowPointer() { return &window; }
+	Window getWindow() { return window; }
+	Model* getModelPointer() { return &model; }
+	Mouse* getMousePointer() { return &mouse; }
+	Utilities::MVP* getMatsPointer() { return &mats; }
+	Utilities::MVP getMats() { return mats; }
+	Mouse getMouse() { return mouse; }
+	Model getModel() { return model; }
+	Camera getCamera() { return camera;}
+	Framebuffer getFramebuffer() { return framebuffer; }
+	Framebuffer* getFramebufferPointer() { return &framebuffer; }
+
+private:
+	Gui gui;
+	Mouse mouse;
+	Camera camera;
+	Window window;
+	Shader basicShader, modelShader, vertShader ;
+	Model model;
+	Grid grid;
+	Framebuffer framebuffer;
+	Utilities::MVP mats;
+
+	float deltaTime, lastFrame;
+
+	bool startGLFW();
+	void setCallBackFuncs();
+	bool loadGlad();
+	void configureRender();
+	void loadShaders();
+	void loadModel(const std::string name);
+	void loadModel();
+	// render loop funcs
+	void updateDeltaTime();
+	void processInput();
+	void renderModel();
 };

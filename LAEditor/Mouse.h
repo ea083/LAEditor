@@ -1,8 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-//#include "Model.h"
+#include "Utilities.h"
 #include <iostream>
 
 class Mouse {
@@ -41,6 +39,25 @@ public:
 	bool getisLMBPressed() { return isLMBPressed; }
 	int getxPos() { return xPos; }
 	int getyPos() { return yPos; }
+
+	glm::vec3 Raycast(Window* window, Utilities::MVP mats) {
+		// NDC
+		glm::vec2 NDCRay = glm::vec3(
+			(2.0f * xPos) / window->getViewerSize().x - 1.0f,
+			1.0f - (2.0f * yPos) / window->getViewerSize().y,
+			1.0f
+		);
+		// Homogeneouse Clip Coordinates
+		glm::vec4 HCCRay = glm::vec4(NDCRay.x, NDCRay.y, -1.0f, 1.0f);
+		// 4D Eye (Camera) Coordinates
+		glm::vec4 CameraRay = glm::inverse(mats.projection) * HCCRay;
+		CameraRay = glm::vec4(CameraRay.x, CameraRay.y, -1.0f, 0.0f);
+		// 4D World Coordinates
+		glm::vec3 WorldCoordinatesRay = glm::inverse(mats.view) * CameraRay;
+		WorldCoordinatesRay = glm::normalize(WorldCoordinatesRay);
+
+		return WorldCoordinatesRay;
+	}
 	
 private:
 	float lastX = 400.0f;

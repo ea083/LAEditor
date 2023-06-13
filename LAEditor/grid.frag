@@ -39,10 +39,10 @@ void main()
     }
     // Axis Line Marks
     if(FragPos.x > -xLineWidth && FragPos.x < xLineWidth){
-        FragColor.x = 1.0f;
+        FragColor.z = 1.0f;
     }
     if(FragPos.z > -zLineWidth && FragPos.z < zLineWidth){
-        FragColor.z = 1.0f;
+        FragColor.x = 1.0f;
     }
     FragColor.a *= (50-distance(cameraPos, FragPos))/100;
     if(FragColor.a < 0.1)

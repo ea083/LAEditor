@@ -2,8 +2,7 @@
 
 #include <glad/glad.h> 
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "Utilities.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -53,6 +52,10 @@ public:
 
 	std::vector<displayVertex> origVertices;
 
+	Model() {
+		gammaCorrection = false;
+	}
+
 	Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma) {
 		loadModel(path);
 	}
@@ -66,13 +69,51 @@ public:
 	}
 
 	void Draw(Shader& shader, Shader* vertShader = NULL, bool textured = false) {
+		shader.setInt("selectedIndex", selectedIndex);
 		for (unsigned int i = 0; i < meshes.size(); i++)
 			if(vertShader != NULL)
 				meshes[i].Draw(shader, vertShader, textured);
 			else
 				meshes[i].Draw(shader, NULL, textured);
 	}
+
+	std::vector<displayVertex> getInterceptedVertices(glm::vec3 Ray, glm::vec3 cameraPos) {
+		std::vector<displayVertex> interceptedVerts;
+		for (int i = 0; i < origVertices.size(); i++) {
+			if (Utilities::discriminant(Ray, cameraPos, origVertices[i].Position, 0.5f) >= 0) {
+				interceptedVerts.push_back(origVertices[i]);
+				std::cout << "Vertex " << i << " at pos " << 
+					origVertices[i].Position.x << ", " <<
+					origVertices[i].Position.y << ", " <<
+					origVertices[i].Position.z << 
+					std::endl;
+			}
+		}
+		selectClosest(interceptedVerts, cameraPos);
+		return interceptedVerts;
+	}
+
+	int selectedIndex = 0;
 private:
+	void selectClosest(std::vector<displayVertex> interceptedVerts, glm::vec3 cameraPos) {
+		if (!interceptedVerts.size() == 0) {
+			double closest = 100000.0f;
+			int closestIndex = selectedIndex;
+			for (int i = 0; i < interceptedVerts.size(); i++) {
+				double distance = glm::distance(interceptedVerts[i].Position, cameraPos);
+				if (distance < closest) {
+					closest = distance;
+					closestIndex = i;
+				}
+			}
+			//selectedIndex = closestIndex;
+			std::cout << "selected Index: " << selectedIndex << std::endl;
+		}
+		else {
+			//std::cout << "No intercepted Vertices" << std::endl;
+		}
+	}
+
 	void loadModel(std::string path) {
 		Assimp::Importer import;
 		const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals /* | aiProcess_FlipUVs */ | aiProcess_CalcTangentSpace);
@@ -113,7 +154,6 @@ private:
 		}
 	}
 
-
 	void processNode(aiNode* node, const aiScene* scene) {
 		// process all the node's meshes (if any)
 		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
@@ -128,6 +168,7 @@ private:
 			processNode(node->mChildren[i], scene);
 		}
 	}
+
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene) {
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;

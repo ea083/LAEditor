@@ -7,6 +7,8 @@
 
 class Framebuffer {
 public:
+	Framebuffer() {}
+
 	void initFrameBuffer(int width, int height) {
 		glGenFramebuffers(1, &FBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);

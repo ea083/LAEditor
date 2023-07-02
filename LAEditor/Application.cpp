@@ -19,26 +19,30 @@ void Application::init() {
 	glViewport(0, 0, window.bufferWidth, window.bufferHeight);
 	configureRender();
 
+	outliner.init();
+
 	loadShaders();
 	loadModel();
 	grid.initGrid();
+	gizmo.init();
+	gizmo.addToOutliner(&outliner);
 
 	framebuffer.initFrameBuffer(window.bufferWidth, window.bufferHeight);
-	gui.initGui(&window, &model, &mouse, &framebuffer, &camera, &mats);
-	//gui.initGui(this);
-
-
+	verticeDataFramebuffer.initVerticeDataFramebuffer(window.bufferWidth, window.bufferHeight);
+	gui.initGui(&window, &model, &mouse, &framebuffer, &camera, &mats, &model2, &verticeDataFramebuffer, &outliner);
 }
 
 Application::~Application() {
 	gui.cleanUp();
 	framebuffer.cleanUp();
+	verticeDataFramebuffer.cleanUp();
 	glfwDestroyWindow(window.windowPointer);
 	glfwTerminate();
 }
 
 void Application::RenderLoop() {
 	while (!glfwWindowShouldClose(window.windowPointer)) {
+
 		updateDeltaTime();
 		processInput();
 
@@ -47,6 +51,7 @@ void Application::RenderLoop() {
 		renderModel();
 
 		gui.endFrame();
+		mouse.setIn3DWindow(getDataAtMousePos().b == 1);
 
 		glfwSwapBuffers(window.windowPointer);
 		glfwPollEvents();
@@ -103,12 +108,12 @@ void Application::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 }
 
 void Application::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-	if (mouse.getis3DViewerFocused())
+	if (mouse.getis3DViewerFocused() && mouse.getIn3DWindow())
 		camera.ProcessMouseScroll((float)yoffset);
 }
 
 void Application::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-	if (mouse.getis3DViewerFocused()) {
+	if (mouse.getis3DViewerFocused() && mouse.getIn3DWindow()) {
 		if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
 			mouse.setKeepCursorInFrame(true);
 			camera.canOrbit = true;
@@ -151,10 +156,16 @@ void Application::loadShaders() {
 	basicShader = Shader("basic.vert", "basic.frag");
 	modelShader = Shader("model.vert", "model.frag");
 	vertShader = Shader("vertice.vert", "vertice.frag");
+	selectedVertShader = Shader("vertice.vert", "selectedVertice.frag");
+	edgeShader = Shader("edge.vert", "edge.frag");
+	verticeDataShader = Shader("verticeData.vert", "verticeData.frag");
+	gizmoShader = Shader("gizmo.vert", "gizmo.frag");
 }
 
 void Application::loadModel(const std::string name) {
 	model = Model(name);
+	model2 = Model2::Model2(name);
+	outliner.addModel(&model2);
 }
 
 void Application::loadModel() {
@@ -203,17 +214,50 @@ void Application::renderModel() {
 	mats.model = glm::mat4(1.0f);
 	modelShader.setMatrices(mats.projection, mats.view, mats.model);
 	modelShader.setVec3("cameraPos", camera.Position);
-	modelShader.setInt("selectedIndex", 10);
 	vertShader.use();
 	vertShader.setMatrices(mats.projection, mats.view, mats.model);
 	vertShader.setVec3("viewPos", camera.Position);
+	selectedVertShader.use();
+	selectedVertShader.setMatrices(mats.projection, mats.view, mats.model);
+	selectedVertShader.setVec3("viewPos", camera.Position);
+	edgeShader.use();
+	edgeShader.setMatrices(mats.projection, mats.view, mats.model);
+	edgeShader.setVec3("viewPos", camera.Position);
 
-	model.Draw(modelShader, &vertShader, false);
+	//gizmoShader.setMatrices(mats);
+	gizmoShader.use();
+	gizmoShader.setMatrices(mats.projection, mats.view, mats.model);
+	gizmoShader.setVec3("viewPos", camera.Position);
+
+
+	//model.Draw(modelShader, &vertShader, false);
+	model2.Draw(modelShader, &vertShader, &selectedVertShader, &edgeShader);
+	gizmo.draw(&gizmoShader);
 	grid.render(mats.projection, mats.view, camera.Position, camera.Radius);
 
 	framebuffer.unbindFramebuffer();
 
-	
+	verticeDataFramebuffer.bindFramebuffer();
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	verticeDataShader.use();
+	verticeDataShader.setMatrices(mats.projection, mats.view, mats.model);
+	verticeDataShader.setVec3("viewPos", camera.Position);
+	model2.Draw(verticeDataShader, &verticeDataShader, &verticeDataShader, NULL, true);
+	verticeDataFramebuffer.unbindFramebuffer();
+
+}
+
+Utilities::PixelData Application::getDataAtMousePos() {
+	return verticeDataFramebuffer.getDataAtPixel(
+		mouse.getxPos(),
+		mouse.getyPos(),
+		window.viewerWidth,
+		window.viewerHeight,
+		window.bufferWidth,
+		window.bufferHeight
+	);
 }
 
 Application* app = NULL;

@@ -39,12 +39,19 @@ public:
 	bool getisLMBPressed() { return isLMBPressed; }
 	int getxPos() { return xPos; }
 	int getyPos() { return yPos; }
+	bool getIn3DWindow() {
+		return in3DWindow;
+	}
+	void setIn3DWindow(bool in3DWindow) {
+		this->in3DWindow = in3DWindow;
+	}
 
 	glm::vec3 Raycast(Window* window, Utilities::MVP mats) {
+		float ratio = window->getViewerSize().y / window->getViewerSize().x;
 		// NDC
 		glm::vec2 NDCRay = glm::vec3(
 			(2.0f * xPos) / window->getViewerSize().x - 1.0f,
-			1.0f - (2.0f * yPos) / window->getViewerSize().y,
+			(1.0f - (2.0f * yPos) / window->getViewerSize().y) + 0.17f,
 			1.0f
 		);
 		// Homogeneouse Clip Coordinates
@@ -65,6 +72,7 @@ private:
 	bool keepCursorInFrame = false;
 	bool firstMouse = true;
 	bool is3DViewerFocused = true;
+	bool in3DWindow = true;
 
 	bool isLMBPressed = false;
 	int xPos = 0, yPos = 0;

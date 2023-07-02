@@ -89,6 +89,7 @@ public:
 					std::endl;
 			}
 		}
+		std::cout << std::endl;
 		selectClosest(interceptedVerts, cameraPos);
 		return interceptedVerts;
 	}

@@ -4,6 +4,8 @@
 #include <glad/glad.h> // for required OpenGL headers
 #include <glm/glm.hpp>
 
+#include "Utilities.h"
+
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -162,6 +164,11 @@ public:
 		setMat4("view", view);
 		setMat4("model", model);
 	}
+
+	void setMatrices(const Utilities::MVP MVP) {
+		setMatrices(MVP.projection, MVP.view, MVP.model);
+	}
+
 private:
 	// check for shader compilation
 	void checkCompileErrors(unsigned int shader, std::string type) {

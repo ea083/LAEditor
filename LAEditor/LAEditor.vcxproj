@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\LAEditor\ExternalFiles\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\LAEditor\ExternalFiles\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\include;D:\LAEditor\ExternalFiles\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\lib;D:\LAEditor\ExternalFiles\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\LAEditor\ExternalFiles\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\LAEditor\ExternalFiles\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\include;D:\LAEditor\ExternalFiles\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\lib;D:\LAEditor\ExternalFiles\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -159,19 +159,24 @@
     <ClInclude Include="..\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\imgui\imstb_textedit.h" />
     <ClInclude Include="..\imgui\imstb_truetype.h" />
+    <ClInclude Include="UIElement.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="Gizmo.h" />
+    <ClInclude Include="UIArrow.h" />
     <ClInclude Include="Grid.h" />
     <ClInclude Include="Gui.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Model2.h" />
     <ClInclude Include="Mouse.h" />
+    <ClInclude Include="Outliner.h" />
     <ClInclude Include="PickingTexture.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Utilities.h" />
+    <ClInclude Include="VerticeDataFramebuffer.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -181,14 +186,21 @@
     <None Include="assimp-vc143-mtd.dll" />
     <None Include="basic.frag" />
     <None Include="basic.vert" />
+    <None Include="edge.frag" />
+    <None Include="edge.vert" />
+    <None Include="gizmo.frag" />
+    <None Include="gizmo.vert" />
     <None Include="grid.frag" />
     <None Include="grid.vert" />
     <None Include="model.frag" />
     <None Include="model.vert" />
     <None Include="picking.frag" />
     <None Include="picking.vert" />
+    <None Include="selectedVertice.frag" />
     <None Include="vertice.frag" />
     <None Include="vertice.vert" />
+    <None Include="verticeData.frag" />
+    <None Include="verticeData.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

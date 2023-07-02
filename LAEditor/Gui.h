@@ -13,11 +13,14 @@
 #include <atlstr.h>
 
 #include "Model.h"
+#include "Model2.h"
 #include "Window.h"
 #include "Mouse.h"
 #include "Framebuffer.h"
 #include "Camera.h"
 #include "Application.h"
+#include "VerticeDataFramebuffer.h"
+#include "Outliner.h"
 
 class Gui {
 public:
@@ -27,13 +30,16 @@ public:
 
 	Gui() {	}
 
-	void initGui(Window* window, Model* model, Mouse* mouse, Framebuffer* framebuffer, Camera* camera, Utilities::MVP* mats) {
+	void initGui(Window* window, Model* model, Mouse* mouse, Framebuffer* framebuffer, Camera* camera, Utilities::MVP* mats, Model2::Model2* model2, VerticeDataFramebuffer* verticeDataFramebuffer, Outliner* outliner) {
 		this->window = window;
 		this->model = model;
 		this->mouse = mouse;
 		this->framebuffer = framebuffer;
 		this->camera = camera;
 		this->mats = mats;
+		this->model2 = model2;
+		this->verticeDataFramebuffer = verticeDataFramebuffer;
+		this->outliner = outliner;
 		getImGuiIO();
 		initImGui();
 	}
@@ -43,6 +49,7 @@ public:
 		createDockSpace();
 		ImGui::NewFrame();
 		showMainMenuBar();
+		showDemoWindow();
 		showDebugGui();
 		showObjectInspector();
 		show3DViewer();
@@ -68,10 +75,14 @@ public:
 	}
 private:
 
+	Outliner* outliner;
+
 	Window* window;
 	Model* model;
+	Model2::Model2* model2;
 	Mouse* mouse;
 	Framebuffer* framebuffer;
+	VerticeDataFramebuffer* verticeDataFramebuffer;
 	Camera* camera;
 	Utilities::MVP* mats;
 	OPENFILENAME ofn;
@@ -133,6 +144,11 @@ private:
 		ImGui_ImplOpenGL3_Init("#version 330");
 	}
 
+	void showDemoWindow() {
+		bool show_demo_window = true;
+		ImGui::ShowDemoWindow(&show_demo_window);
+	}
+
 	void newFrames() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -189,63 +205,250 @@ private:
 	void showObjectInspector() {
 
 		if (mouse->getisLMBPressed()) {
-			glm::vec3 ray = mouse->Raycast(window, *mats);
-			model->getInterceptedVertices(ray, camera->Position);
+			model2->setSelectedVertices(
+				verticeDataFramebuffer->getDataAtPixel(
+					mouse->getxPos(), 
+					mouse->getyPos(), 
+					window->viewerWidth, 
+					window->viewerHeight, 
+					window->bufferWidth, 
+					window->bufferHeight));
+
+			//glm::vec3 ray = mouse->Raycast(window, *mats);
+			//model->getInterceptedVertices(ray, camera->Position);
+			//model2->getInterceptedVertices(ray, camera->Position);
 		}
 
 		ImGui::Begin("Object Inspector");
-		ImGui::DragFloat("XPos", &VertexX, 0.005f);
-		ImGui::DragFloat("YPos", &VertexY, 0.005f);
-		ImGui::DragFloat("ZPos", &VertexZ, 0.005f);
-		ImGui::DragInt("index", &vertexIndex, 1);
 
-		//model->meshes[0].vertices[vertexIndex].Position.x = VertexX;
-		//model->meshes[0].vertices[vertexIndex].Position.y = VertexY;
-		//model->meshes[0].vertices[vertexIndex].Position.z = VertexZ;
-		model->origVertices[vertexIndex].setPos(glm::vec3(VertexX, VertexY, VertexZ));
-
-		static ImGuiTableFlags flags = 
-			ImGuiTableFlags_Borders | 
-			ImGuiTableFlags_RowBg | 
+		static ImGuiTableFlags flags =
+			ImGuiTableFlags_Borders |
+			ImGuiTableFlags_RowBg |
 			ImGuiTableFlags_SizingFixedFit;
-		if (ImGui::BeginTable("Vertices", 4, flags))
-		{
 
-			ImGui::TableSetupColumn(" ");
-			ImGui::TableSetupColumn("X");
-			ImGui::TableSetupColumn("Y");
-			ImGui::TableSetupColumn("Z");
-			ImGui::TableHeadersRow();
-
-			for (int row = 0; row < model->origVertices.size(); row++)
+		if (ImGui::CollapsingHeader("Old Stuff")) { 
+			if (ImGui::TreeNode("How to do this "))
 			{
-				ImGui::TableNextRow();
-				for (int column = 0; column < 4; column++)
-				{
-					ImGui::TableSetColumnIndex(column);
-					char buf[32];
-					if(column == 0)
-						sprintf_s(buf, "%i ", row);
-					else if(column == 1)
-						if(model->origVertices[row].Position.x < 0)
-							sprintf_s(buf, "%f", model->origVertices[row].Position.x);
-						else
-							sprintf_s(buf, " %f", model->origVertices[row].Position.x);
-					else if(column == 2)
-						if (model->origVertices[row].Position.y < 0)
-							sprintf_s(buf, "%f", model->origVertices[row].Position.y);
-						else
-							sprintf_s(buf, " %f", model->origVertices[row].Position.y);
-					else if(column == 3)
-						if (model->origVertices[row].Position.z < 0)
-							sprintf_s(buf, "%f", model->origVertices[row].Position.z);
-						else
-							sprintf_s(buf, " %f", model->origVertices[row].Position.z);
+				if (ImGui::CollapsingHeader("Category B")) { ImGui::Text("Blah blah blah"); };
+				if (ImGui::CollapsingHeader("Category C")) { ImGui::Text("Blah blah blah"); };
 
-					ImGui::TextUnformatted(buf);
-				}
+				ImGui::TreePop();
 			}
-			ImGui::EndTable();
+			//const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
+			//const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+
+
+			ImGui::DragFloat("XPos", &VertexX, 0.005f);
+			ImGui::DragFloat("YPos", &VertexY, 0.005f);
+			ImGui::DragFloat("ZPos", &VertexZ, 0.005f);
+			ImGui::DragInt("index", &vertexIndex, 1);
+
+			model->origVertices[vertexIndex].setPos(glm::vec3(VertexX, VertexY, VertexZ));
+
+			if (ImGui::BeginTable("Vertices", 4, flags))
+			{
+
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("X");
+				ImGui::TableSetupColumn("Y");
+				ImGui::TableSetupColumn("Z");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model->origVertices.size(); row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 4; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						char buf[32];
+						if(column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if(column == 1)
+							if(model->origVertices[row].Position.x < 0)
+								sprintf_s(buf, "%f", model->origVertices[row].Position.x);
+							else
+								sprintf_s(buf, " %f", model->origVertices[row].Position.x);
+						else if(column == 2)
+							if (model->origVertices[row].Position.y < 0)
+								sprintf_s(buf, "%f", model->origVertices[row].Position.y);
+							else
+								sprintf_s(buf, " %f", model->origVertices[row].Position.y);
+						else if(column == 3)
+							if (model->origVertices[row].Position.z < 0)
+								sprintf_s(buf, "%f", model->origVertices[row].Position.z);
+							else
+								sprintf_s(buf, " %f", model->origVertices[row].Position.z);
+
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+
+			ImGui::Text("Model 2");
+			ImGui::Text("Vertices");
+			if (ImGui::BeginTable("Model 2 Vertices", 5, flags))
+			{
+
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("X");
+				ImGui::TableSetupColumn("Y");
+				ImGui::TableSetupColumn("Z");
+				ImGui::TableSetupColumn("Connected Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumVertices(); row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 5; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						Utilities::Vertex currVertex = model2->getVertex(row);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1)
+							if (currVertex.Position.x < 0)
+								sprintf_s(buf, "%f", currVertex.Position.x);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.x);
+						else if (column == 2)
+							if (currVertex.Position.y < 0)
+								sprintf_s(buf, "%f", currVertex.Position.y);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.y);
+						else if (column == 3)
+							if (currVertex.Position.z < 0)
+								sprintf_s(buf, "%f", currVertex.Position.z);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.z);
+						else if (column == 4) {
+							std::string indices = "";
+							for (int i = 0; i < currVertex.connectedVertsIndices.size(); i++) {
+								indices += std::to_string(currVertex.connectedVertsIndices[i]) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+
+			ImGui::Text("Faces");
+			if (ImGui::BeginTable("Model 2 Faces", 2, flags))
+			{
+
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("Vertex Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumFaces(); row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 2; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						Model2::face currFace = model2->getFace(row);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1) {
+							std::string indices = "";
+							for (int i = 0; i < currFace.vertIndices.size(); i++) {
+								indices += std::to_string(currFace.vertIndices[i]) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+
+			ImGui::Text("Triangulated Indices");
+			if (ImGui::BeginTable("Model 2 Indices", 2, flags))
+			{
+
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("Triangle Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumIndices()/3; row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 2; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1) {
+							std::string indices = "";
+							for (int i = 0; i < 3; i++) {
+								indices += std::to_string(model2->getIndice(row*3 + i)) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+
+			ImGui::Text("Edge Indices");
+			if (ImGui::BeginTable("Model 2 Edge Indices", 2, flags))
+			{
+
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("Edge Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumEdgeIndices() / 2; row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 2; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1) {
+							std::string indices = "";
+							for (int i = 0; i < 2; i++) {
+								indices += std::to_string(model2->getEdgeIndice(row * 2 + i)) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+
+		};
+		
+		if (ImGui::CollapsingHeader("Objects Outliner")) {
+			if (ImGui::TreeNode("Models")) {
+				for (int i = 0; i < outliner->getNumModels(); i++) {
+					if (ImGui::TreeNode(outliner->getModel(i)->getName().c_str())) {
+						showModelTables(outliner->getModel(i));
+						ImGui::TreePop();
+					}
+				}
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("UI Elements Outliner")) {
+				for (int i = 0; i < outliner->getNumUIElements(); i++) {
+					if (ImGui::TreeNode(outliner->getUIElement(i)->getName().c_str())) {
+						showUIElementTables(outliner->getUIElement(i));
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
 		}
 		ImGui::End();
 
@@ -287,6 +490,10 @@ private:
 		framebuffer->rescaleFramebuffer(
 			window->viewerWidth + (window->bufferWidth - window->viewerWidth),
 			window->viewerHeight + (window->bufferHeight - window->viewerHeight));
+		verticeDataFramebuffer->rescaleFramebuffer(
+			window->viewerWidth + (window->bufferWidth - window->viewerWidth),
+			window->viewerHeight + (window->bufferHeight - window->viewerHeight));
+
 		ImGui::GetWindowDrawList()->AddImage(
 			(void*)framebuffer->getTextureID(),
 			ImVec2(window->viewerXPos, window->viewerYPos),
@@ -294,6 +501,199 @@ private:
 			ImVec2(0, 1),
 			ImVec2(1, 0)
 		);
+
+		/*ImGui::GetWindowDrawList()->AddImage(
+			(void*)verticeDataFramebuffer->getTextureID(),
+			ImVec2(window->viewerXPos, window->viewerYPos),
+			ImVec2(window->viewerXPos + window->viewerWidth, window->viewerYPos + window->viewerHeight),
+			ImVec2(0, 1),
+			ImVec2(1, 0)
+		);*/
 	}
 
+	void showModelTables(Model2::Model2* model) {
+		static ImGuiTableFlags flags =
+			ImGuiTableFlags_Borders |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_SizingFixedFit |
+			ImGuiTableFlags_ScrollY |
+			ImGuiTableFlags_ScrollX;
+		ImVec2 outer_size = ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() * 8);
+		if (ImGui::TreeNode("Vertices")) {
+			if (ImGui::BeginTable("Vertices", 5, flags, outer_size))
+			{
+				ImGui::TableSetupScrollFreeze(1, 1);
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("X");
+				ImGui::TableSetupColumn("Y");
+				ImGui::TableSetupColumn("Z");
+				ImGui::TableSetupColumn("Connected Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumVertices(); row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 5; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						Utilities::Vertex currVertex = model2->getVertex(row);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1)
+							if (currVertex.Position.x < 0)
+								sprintf_s(buf, "%f", currVertex.Position.x);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.x);
+						else if (column == 2)
+							if (currVertex.Position.y < 0)
+								sprintf_s(buf, "%f", currVertex.Position.y);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.y);
+						else if (column == 3)
+							if (currVertex.Position.z < 0)
+								sprintf_s(buf, "%f", currVertex.Position.z);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.z);
+						else if (column == 4) {
+							std::string indices = "";
+							for (int i = 0; i < currVertex.connectedVertsIndices.size(); i++) {
+								indices += std::to_string(currVertex.connectedVertsIndices[i]) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+			ImGui::TreePop();
+		}
+		if(ImGui::TreeNode("Faces")) {
+			if (ImGui::BeginTable("Faces", 2, flags, outer_size))
+			{
+				ImGui::TableSetupScrollFreeze(1, 1);
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("Vertex Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumFaces(); row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 2; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						Model2::face currFace = model2->getFace(row);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1) {
+							std::string indices = "";
+							for (int i = 0; i < currFace.vertIndices.size(); i++) {
+								indices += std::to_string(currFace.vertIndices[i]) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Triangle Indices")) {
+			if (ImGui::BeginTable("Indices", 2, flags, outer_size))
+			{
+				ImGui::TableSetupScrollFreeze(1, 1);
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("Triangle Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < model2->getNumIndices() / 3; row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 2; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1) {
+							std::string indices = "";
+							for (int i = 0; i < 3; i++) {
+								indices += std::to_string(model2->getIndice(row * 3 + i)) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	void showUIElementTables(UIElement* uiElement) {
+		/*
+		static ImGuiTableFlags flags =
+			ImGuiTableFlags_Borders |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_SizingFixedFit |
+			ImGuiTableFlags_ScrollY |
+			ImGuiTableFlags_ScrollX;
+		ImVec2 outer_size = ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() * 8);
+		if (ImGui::TreeNode("Vertices")) {
+			if (ImGui::BeginTable("Vertices", 5, flags, outer_size))
+			{
+				ImGui::TableSetupScrollFreeze(1, 1);
+				ImGui::TableSetupColumn(" ");
+				ImGui::TableSetupColumn("X");
+				ImGui::TableSetupColumn("Y");
+				ImGui::TableSetupColumn("Z");
+				ImGui::TableSetupColumn("Connected Indices");
+				ImGui::TableHeadersRow();
+
+				for (int row = 0; row < uiElement->getNumVertices(); row++)
+				{
+					ImGui::TableNextRow();
+					for (int column = 0; column < 5; column++)
+					{
+						ImGui::TableSetColumnIndex(column);
+						Utilities::Vertex currVertex = uiElement->getVertex(row);
+						char buf[64];
+						if (column == 0)
+							sprintf_s(buf, "%i ", row);
+						else if (column == 1)
+							if (currVertex.Position.x < 0)
+								sprintf_s(buf, "%f", currVertex.Position.x);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.x);
+						else if (column == 2)
+							if (currVertex.Position.y < 0)
+								sprintf_s(buf, "%f", currVertex.Position.y);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.y);
+						else if (column == 3)
+							if (currVertex.Position.z < 0)
+								sprintf_s(buf, "%f", currVertex.Position.z);
+							else
+								sprintf_s(buf, " %f", currVertex.Position.z);
+						else if (column == 4) {
+							std::string indices = "";
+							for (int i = 0; i < currVertex.connectedVertsIndices.size(); i++) {
+								indices += std::to_string(currVertex.connectedVertsIndices[i]) + ", ";
+							}
+							sprintf_s(buf, "%s", indices.c_str());
+						}
+						ImGui::TextUnformatted(buf);
+					}
+				}
+				ImGui::EndTable();
+			}
+			ImGui::TreePop();
+		}
+		*/
+		uiElement->showTables();
+	}
 };

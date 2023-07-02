@@ -16,6 +16,12 @@
 #include "Gui.h"
 #include "Mouse.h"
 #include "Window.h"
+#include "VerticeDataFramebuffer.h"
+#include "Gizmo.h"
+
+#include "Outliner.h"
+
+#include "Model2.h"
 
 #include <iostream>
 #include <string>
@@ -54,10 +60,17 @@ private:
 	Mouse mouse;
 	Camera camera;
 	Window window;
-	Shader basicShader, modelShader, vertShader ;
+	Shader basicShader, modelShader, vertShader, selectedVertShader, edgeShader;
+	Shader verticeDataShader;
+	Shader gizmoShader;
 	Model model;
+	Model2::Model2 model2;
 	Grid grid;
 	Framebuffer framebuffer;
+	VerticeDataFramebuffer verticeDataFramebuffer;
+	Gizmo gizmo;
+
+	Outliner outliner;
 	Utilities::MVP mats;
 
 	float deltaTime, lastFrame;
@@ -73,4 +86,6 @@ private:
 	void updateDeltaTime();
 	void processInput();
 	void renderModel();
+
+	Utilities::PixelData getDataAtMousePos();
 };

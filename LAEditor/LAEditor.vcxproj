@@ -175,6 +175,11 @@
     <ClInclude Include="PickingTexture.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="UIGizmoCenter.h" />
+    <ClInclude Include="UIBaseState.h" />
+    <ClInclude Include="UIGrabState.h" />
+    <ClInclude Include="UIIdleState.h" />
+    <ClInclude Include="UIStateMachine.h" />
     <ClInclude Include="Utilities.h" />
     <ClInclude Include="VerticeDataFramebuffer.h" />
     <ClInclude Include="Window.h" />
@@ -197,6 +202,8 @@
     <None Include="picking.frag" />
     <None Include="picking.vert" />
     <None Include="selectedVertice.frag" />
+    <None Include="uiElementData.frag" />
+    <None Include="uiElementData.vert" />
     <None Include="vertice.frag" />
     <None Include="vertice.vert" />
     <None Include="verticeData.frag" />

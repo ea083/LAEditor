@@ -1,9 +1,12 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <chrono>
 
 namespace Utilities {
 
@@ -12,6 +15,78 @@ namespace Utilities {
 		Y,
 		Z
 	};
+
+	enum UIElementType {
+		GizmoXAxisArrow,
+		GizmoYAxisArrow,
+		GizmoZAxisArrow,
+		GizmoCenter
+	};
+
+	std::string getUIElementNameFromType(UIElementType type) {
+		std::string returnString;
+		switch (type) {
+		case GizmoXAxisArrow:
+			returnString = std::string("Gizmo X Axis Arrow");
+			return returnString;
+		case GizmoYAxisArrow:
+			returnString = std::string("Gizmo Y Axis Arrow");
+			return returnString;
+		case GizmoZAxisArrow:
+			returnString = std::string("Gizmo Z Axis Arrow");
+			return returnString;
+		case GizmoCenter:
+			returnString = std::string("Gizmo Center");
+			return returnString;
+		default:
+			returnString = std::string("");
+			return returnString;
+		}
+	}
+
+	std::string returnAStringasdfasfasdfasdf() {
+		std::string aString = std::string("asdf");
+		return aString;
+	}
+
+	void nameVariableDebugTable(int varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		ImGui::TextUnformatted(std::to_string(varVal).c_str());
+	}
+
+	void nameVariableDebugTable(long varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		ImGui::TextUnformatted(std::to_string(varVal).c_str());
+	}
+
+	void nameVariableDebugTable(float varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1); 
+		ImGui::TextUnformatted(std::to_string(varVal).c_str());
+	}
+
+	void nameVariableDebugTable(bool varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		ImGui::TextUnformatted(std::to_string(varVal).c_str());
+	}
+
+	long getCurrentTimeInMS() {
+		auto currentTime = std::chrono::system_clock::now();
+		auto currentTimeMs = std::chrono::time_point_cast<std::chrono::milliseconds>(currentTime);
+		auto currentTimeMsValue = currentTimeMs.time_since_epoch().count();
+		return currentTimeMsValue;
+	}
 
 	struct Vertex {
 		glm::vec3 Position;
@@ -244,4 +319,7 @@ namespace Utilities {
 
 	}
 
+	void generateCube(float edgeLength, std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, glm::vec3 offset) {
+		generateCylinder(4, edgeLength/2, edgeLength*0.75, vertices, indices, offset);
+	}
 }

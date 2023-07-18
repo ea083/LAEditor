@@ -4,6 +4,7 @@
 #include "Model2.h"
 #include "UIElement.h"
 #include "UIArrow.h"
+#include "UIGizmoCenter.h"
 
 class Outliner {
 public:
@@ -37,6 +38,12 @@ public:
 	}
 
 	void addUIElement(UIArrow* uiElement) {
+		uiElement->setIndex(getNumUIElements());
+		uiElements.push_back(uiElement);
+	}
+
+	void addUIElement(UIGizmoCenter* uiElement) {
+		uiElement->setIndex(getNumUIElements());
 		uiElements.push_back(uiElement);
 	}
 

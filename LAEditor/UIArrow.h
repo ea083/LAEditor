@@ -14,21 +14,41 @@ public:
 	UIArrow() {	}
 
 	void init() override {
-		Utilities::Vertex tempVert;
+		setType(Utilities::GizmoXAxisArrow);
 		Utilities::generateCone(12, 0.5f, 1.0f, vertices, indices, glm::vec3(0.0f));
 		Utilities::generateCylinder(12, 0.25, 1.0f, vertices, indices, glm::vec3(0.0f));
+		axis = Utilities::X;
 		setVAO();
 	}
 
-	void init(Utilities::axis axis, std::string name) {
-		setName(name);
+	void init(Utilities::axis axis, Utilities::UIElementType type) {
+		setType(type);
+		this->axis = axis;
 		Utilities::generateCone(32, 0.25f, 0.5f, vertices, indices, glm::vec3(0.0f, 0.0f, 2.0f));
 		Utilities::generateCylinder(32, 0.05, 2.0f, vertices, indices, glm::vec3(0.0f, 0.0f, 1.0f));
 		setVAO();
 	}
 
-	void draw(Shader *shader) override{
+	void draw(Shader *shader, glm::mat4 model) override{
 		shader->use();
+		shader->setBool("isHighlighted", isHighlighted);
+		//glm::mat4 model = glm::mat4(1.0f);
+		switch (axis) {
+		case Utilities::X:
+			model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			shader->setMat4("model", model);
+			shader->setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
+			break;
+		case Utilities::Y:
+			model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			shader->setMat4("model", model);
+			shader->setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
+			break;
+		case Utilities::Z:
+			shader->setMat4("model", model);
+			shader->setVec3("color", glm::vec3(0.0f, 0.0f, 1.0f));
+			break;
+		}
 		glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
@@ -96,10 +116,12 @@ public:
 		}
 	}
 
+	
+
 private:
 
 	unsigned int VAO, VBO, EBO;
-	unsigned int shaftVAO, shaftVBO, shaftEBO;
+	Utilities::axis axis;
 	
 	void generateCone(int numDivisions, float radius) {
 		Utilities::Vertex tempVert;

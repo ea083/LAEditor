@@ -97,6 +97,21 @@ namespace Model2 {
 
 			setSelectedVerticeVAO(); 
 		}
+		int getNumSelectedVertices() {
+			return selectedVerticesIndices.size();
+		}
+		void translateSelectedVertices(float distance, glm::vec3 direction) {
+			const glm::vec3 delta = distance * glm::normalize(direction);
+			for (int i = 0; i < selectedVerticesIndices.size(); i++) {
+				const int currIndex = selectedVerticesIndices[i];
+				vertices[currIndex].Position += delta;
+				for (int j = 0; j < vertices[currIndex].connectedVerts.size(); j++)
+					vertices[currIndex].connectedVerts[j]->Position += delta;
+				
+			}
+			setVAO(); 
+			setSelectedVerticeVAO();
+		}
 
 		Utilities::Vertex getVertex(int index) {
 			if(index < vertices.size() && index >= 0)
@@ -141,7 +156,7 @@ namespace Model2 {
 
 	private:
 		std::string directory;
-		std::string name;
+		std::string name; 
 		std::vector<Utilities::Vertex> vertices;
 		std::vector<face> faces;
 		std::vector<unsigned int> indices;

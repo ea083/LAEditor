@@ -15,6 +15,50 @@ public:
 		this->lastY = lastY;
 	}
 
+	void degbug() {
+		static ImGuiTableFlags flags =
+			ImGuiTableFlags_Borders |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_SizingFixedFit |
+			ImGuiTableFlags_ScrollY |
+			ImGuiTableFlags_ScrollX;
+		ImVec2 outer_size = ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() * 10);
+
+		if (ImGui::TreeNode("Mouse")) {
+			if (ImGui::BeginTable("Variables", 2, flags, outer_size)) {
+				ImGui::TableSetupScrollFreeze(1, 1);
+				ImGui::TableSetupColumn("Name");
+				ImGui::TableSetupColumn("Value");
+				ImGui::TableHeadersRow();
+
+				Utilities::nameVariableDebugTable(lastX, "lastX");
+				Utilities::nameVariableDebugTable(lastY, "lastY");
+				Utilities::nameVariableDebugTable(keepCursorInFrame, "keepCursorInFrame");
+				Utilities::nameVariableDebugTable(firstMouse, "firstMouse");
+				Utilities::nameVariableDebugTable(is3DViewerFocused, "is3DViewerFocused");
+				Utilities::nameVariableDebugTable(in3DWindow, "in3DWindow");
+				Utilities::nameVariableDebugTable(isLMBPressed, "isLMBPressed");
+				Utilities::nameVariableDebugTable(isLMBPressedLastFrame, "isLMBPressedLastFrame");
+				Utilities::nameVariableDebugTable(xPos, "xPos");
+				Utilities::nameVariableDebugTable(yPos, "yPos");
+				Utilities::nameVariableDebugTable(xoffset, "xoffset");
+				Utilities::nameVariableDebugTable(yoffset, "yoffset");
+				Utilities::nameVariableDebugTable(movingTime, "movingTime");
+				ImGui::EndTable();
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	void setOffset(float xoffset, float yoffset) {
+		this->xoffset = xoffset;
+		this->yoffset = yoffset;
+	}
+
+	glm::vec2 getOffset() {
+		return glm::vec2(xoffset, yoffset);
+	}
+
 	void setLastX(float lastX) {
 		this->lastX = lastX;
 	}
@@ -32,11 +76,16 @@ public:
 	bool getfirstMouse() { return firstMouse; }
 	bool getis3DViewerFocused() { return is3DViewerFocused; }
 
-	void setisLMBPressed(bool isLMBPressed) { this->isLMBPressed = isLMBPressed;}
 	void setxPos(int xPos) { this->xPos = xPos;}
 	void setyPos(int yPos) { this->yPos = yPos;}
 
+	void setisLMBPressed(bool isLMBPressed) { 
+		isLMBPressedLastFrame = isLMBPressed;
+		this->isLMBPressed = isLMBPressed;
+	}
 	bool getisLMBPressed() { return isLMBPressed; }
+	bool getIsLMBPressedLastFrame() { return isLMBPressedLastFrame; }
+
 	int getxPos() { return xPos; }
 	int getyPos() { return yPos; }
 	bool getIn3DWindow() {
@@ -44,6 +93,14 @@ public:
 	}
 	void setIn3DWindow(bool in3DWindow) {
 		this->in3DWindow = in3DWindow;
+	}
+
+	void setMovingTime() {
+		movingTime = Utilities::getCurrentTimeInMS();
+	}
+
+	long getMovingTime() {
+		return movingTime;
 	}
 
 	glm::vec3 Raycast(Window* window, Utilities::MVP mats) {
@@ -75,6 +132,11 @@ private:
 	bool in3DWindow = true;
 
 	bool isLMBPressed = false;
+	bool isLMBPressedLastFrame = isLMBPressed;
 	int xPos = 0, yPos = 0;
 
+	float xoffset = 0, yoffset = 0;
+
+	
+	long movingTime = Utilities::getCurrentTimeInMS();
 };

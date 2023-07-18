@@ -31,6 +31,9 @@
     <Filter Include="Resource Files\Shaders\UI">
       <UniqueIdentifier>{b8fa2bf0-0eb4-473a-b6fa-d4f9869242a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\UI\UIStateMachine">
+      <UniqueIdentifier>{cf353c66-835e-47f6-9519-31f93d968cce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\imgui\imgui.cpp">
@@ -146,6 +149,21 @@
     <ClInclude Include="UIElement.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
+    <ClInclude Include="UIGizmoCenter.h">
+      <Filter>Header Files\UI\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="UIBaseState.h">
+      <Filter>Header Files\UI\UIStateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="UIStateMachine.h">
+      <Filter>Header Files\UI\UIStateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="UIIdleState.h">
+      <Filter>Header Files\UI\UIStateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="UIGrabState.h">
+      <Filter>Header Files\UI\UIStateMachine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="dependencies.txt">
@@ -205,6 +223,12 @@
       <Filter>Resource Files\Shaders\UI</Filter>
     </None>
     <None Include="gizmo.frag">
+      <Filter>Resource Files\Shaders\UI</Filter>
+    </None>
+    <None Include="uiElementData.vert">
+      <Filter>Resource Files\Shaders\UI</Filter>
+    </None>
+    <None Include="uiElementData.frag">
       <Filter>Resource Files\Shaders\UI</Filter>
     </None>
   </ItemGroup>

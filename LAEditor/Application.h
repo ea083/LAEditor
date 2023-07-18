@@ -26,7 +26,7 @@
 #include <iostream>
 #include <string>
 
-static const unsigned int WIN_WIDTH = 800, WIN_HEIGHT = 600;
+static const unsigned int WIN_WIDTH = 1200, WIN_HEIGHT = 600;
 
 class Application
 {
@@ -61,7 +61,7 @@ private:
 	Camera camera;
 	Window window;
 	Shader basicShader, modelShader, vertShader, selectedVertShader, edgeShader;
-	Shader verticeDataShader;
+	Shader verticeDataShader, uiElementDataShader;
 	Shader gizmoShader;
 	Model model;
 	Model2::Model2 model2;

@@ -70,9 +70,9 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-		std::cout << "Pixel at (" << x << ", " << y << "): R = " << (pixelData[0])
+		/*std::cout << "Pixel at (" << x << ", " << y << "): R = " << (pixelData[0])
 			<< ", G=" << (pixelData[1])
-			<< ", B=" << (pixelData[2]) << std::endl;
+			<< ", B=" << (pixelData[2]) << std::endl;*/
 		Utilities::PixelData returnVal;
 		returnVal.r = pixelData[0];
 		returnVal.g = pixelData[1];

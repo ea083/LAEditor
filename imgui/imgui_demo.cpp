@@ -587,7 +587,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
         if (ImGui::BeginTable("split", 3))
         {
             ImGui::TableNextColumn(); ImGui::Checkbox("No titlebar", &no_titlebar);
-            ImGui::TableNextColumn(); ImGui::Checkbox("No scrollbar", &no_scrollbar);
+            ImGui::TableNextColumn(); ImGui::Checkbox("No scrollbar", &no_scrollbar); 
             ImGui::TableNextColumn(); ImGui::Checkbox("No menu", &no_menu);
             ImGui::TableNextColumn(); ImGui::Checkbox("No move", &no_move);
             ImGui::TableNextColumn(); ImGui::Checkbox("No resize", &no_resize);

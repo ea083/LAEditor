@@ -12,7 +12,7 @@ Application::Application()
 void Application::init() {
 	if (!startGLFW())
 		return;
-	window.createWindow(800, 600, "Llama Asset Editor");
+	window.createWindow(WIN_WIDTH, WIN_HEIGHT, "Llama Asset Editor");
 	setCallBackFuncs();
 	if (!loadGlad())
 		return;
@@ -29,7 +29,7 @@ void Application::init() {
 
 	framebuffer.initFrameBuffer(window.bufferWidth, window.bufferHeight);
 	verticeDataFramebuffer.initVerticeDataFramebuffer(window.bufferWidth, window.bufferHeight);
-	gui.initGui(&window, &model, &mouse, &framebuffer, &camera, &mats, &model2, &verticeDataFramebuffer, &outliner);
+	gui.initGui(&window, &model, &mouse, &framebuffer, &camera, &mats, &model2, &verticeDataFramebuffer, &outliner, &gizmo);
 }
 
 Application::~Application() {
@@ -96,15 +96,17 @@ void Application::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	float yoffset = mouse.getLastY() - ypos; // reversed since y-coordinates range from bottom to top.
 	mouse.setLastX(xpos);
 	mouse.setLastY(ypos);
-	if (xoffset > WIN_WIDTH / 2.0)
+	if (xoffset > this->window.viewerWidth / 2.0)
 		return;
-	if (yoffset > WIN_HEIGHT / 2.0)
+	if (yoffset > this->window.viewerHeight	/ 2.0)
 		return;
-	if (xoffset < (-1 * (int)WIN_WIDTH) / 2.0)
+	if (xoffset < (-1 * (int)this->window.viewerWidth) / 2.0)
 		return;
-	if (yoffset < (-1 * (int)WIN_HEIGHT) / 2.0)
+	if (yoffset < (-1 * (int)this->window.viewerHeight) / 2.0)
 		return;
 	camera.ProcessMouseMovement(xoffset, yoffset, true);
+	mouse.setOffset(xoffset, yoffset);
+	mouse.setMovingTime();
 }
 
 void Application::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
@@ -134,6 +136,7 @@ void Application::mouseButtonCallback(GLFWwindow* window, int button, int action
 		}
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			mouse.setisLMBPressed(action == GLFW_PRESS);
+
 		}
 	}
 }
@@ -160,6 +163,7 @@ void Application::loadShaders() {
 	edgeShader = Shader("edge.vert", "edge.frag");
 	verticeDataShader = Shader("verticeData.vert", "verticeData.frag");
 	gizmoShader = Shader("gizmo.vert", "gizmo.frag");
+	uiElementDataShader = Shader("uiElementData.vert", "uiElementData.frag");
 }
 
 void Application::loadModel(const std::string name) {
@@ -189,7 +193,8 @@ void Application::processInput() {
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window.windowPointer, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
-	if (glfwGetKey(window.windowPointer, GLFW_KEY_Q) == GLFW_PRESS)
+	if (glfwGetKey(window.windowPointer, GLFW_KEY_Q) == GLFW_PRESS &&
+		glfwGetKey(window.windowPointer, GLFW_MOD_SHIFT) == GLFW_PRESS)
 		camera.ProcessKeyboard(DOWN, deltaTime);
 	if (glfwGetKey(window.windowPointer, GLFW_KEY_E) == GLFW_PRESS)
 		camera.ProcessKeyboard(UP, deltaTime);
@@ -197,6 +202,12 @@ void Application::processInput() {
 		camera.isShiftPan = true;
 	if (glfwGetKey(window.windowPointer, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
 		camera.isShiftPan = false;
+
+	if (glfwGetKey(window.windowPointer, GLFW_KEY_G) == GLFW_PRESS)
+		gui.startGrab();
+
+	if (glfwGetKey(window.windowPointer, GLFW_KEY_Q) == GLFW_PRESS)		
+		gui.endAction();
 }
 
 void Application::renderModel() {
@@ -245,6 +256,10 @@ void Application::renderModel() {
 	verticeDataShader.setMatrices(mats.projection, mats.view, mats.model);
 	verticeDataShader.setVec3("viewPos", camera.Position);
 	model2.Draw(verticeDataShader, &verticeDataShader, &verticeDataShader, NULL, true);
+	uiElementDataShader.use();
+	uiElementDataShader.setMatrices(mats.projection, mats.view, mats.model);
+	uiElementDataShader.setVec3("viewPos", camera.Position);
+	gizmo.draw(&uiElementDataShader);
 	verticeDataFramebuffer.unbindFramebuffer();
 
 }

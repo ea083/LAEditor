@@ -21,6 +21,11 @@
 #include "Application.h"
 #include "VerticeDataFramebuffer.h"
 #include "Outliner.h"
+#include "Gizmo.h"
+
+#include "UIStateMachine.h"
+#include "UIIdleState.h"
+#include "UIGrabState.h"
 
 class Gui {
 public:
@@ -30,7 +35,7 @@ public:
 
 	Gui() {	}
 
-	void initGui(Window* window, Model* model, Mouse* mouse, Framebuffer* framebuffer, Camera* camera, Utilities::MVP* mats, Model2::Model2* model2, VerticeDataFramebuffer* verticeDataFramebuffer, Outliner* outliner) {
+	void initGui(Window* window, Model* model, Mouse* mouse, Framebuffer* framebuffer, Camera* camera, Utilities::MVP* mats, Model2::Model2* model2, VerticeDataFramebuffer* verticeDataFramebuffer, Outliner* outliner, Gizmo* gizmo) {
 		this->window = window;
 		this->model = model;
 		this->mouse = mouse;
@@ -40,6 +45,7 @@ public:
 		this->model2 = model2;
 		this->verticeDataFramebuffer = verticeDataFramebuffer;
 		this->outliner = outliner;
+		this->gizmo = gizmo;
 		getImGuiIO();
 		initImGui();
 	}
@@ -51,6 +57,8 @@ public:
 		showMainMenuBar();
 		showDemoWindow();
 		showDebugGui();
+		processInput();
+		runCurrentState();
 		showObjectInspector();
 		show3DViewer();
 		ImGui::Render();
@@ -73,9 +81,30 @@ public:
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 	}
+
+	void startGrab() {
+		if(dynamic_cast<UIIdleState*>(uiStateMachine.getCurrentState()))
+			uiStateMachine.setCurrentState(new UIGrabState());
+		/*isGrabbing = true;
+		mouse->setKeepCursorInFrame(true);
+		if (model2->getNumSelectedVertices() == 0) {
+			isGrabbing = false;
+			mouse->setKeepCursorInFrame(true);
+		}*/
+	}
+
+	void endAction() {
+		if (!dynamic_cast<UIIdleState*>(uiStateMachine.getCurrentState()))
+			uiStateMachine.setCurrentState(new UIIdleState());
+		/*if (isGrabbing) {
+			mouse->setKeepCursorInFrame(false);
+			isGrabbing = false;
+		}*/
+	}
 private:
 
 	Outliner* outliner;
+	Gizmo* gizmo;
 
 	Window* window;
 	Model* model;
@@ -90,7 +119,13 @@ private:
 	HWND hwnd;
 	HANDLE hf;
 
+	UIStateMachine uiStateMachine;
+
 	float debug1 = 0.0f;
+
+	bool firstClick = true;
+	bool isGrabbing = false;
+	bool displayUIFramebuffer = false;
 
 	void openObjFile() {
 		// common dialog box structure, setting all fields to 0 is important
@@ -200,25 +235,54 @@ private:
 	void showDebugGui() {
 		ImGui::Begin("Debug");
 		ImGui::DragInt("SelectedIndex", &(model->selectedIndex), 1, 0);
+		mouse->degbug();
+		ImGui::Checkbox("Show UI Framebuffer", &displayUIFramebuffer);
 		ImGui::End();
 	}
-	void showObjectInspector() {
-
-		if (mouse->getisLMBPressed()) {
-			model2->setSelectedVertices(
-				verticeDataFramebuffer->getDataAtPixel(
-					mouse->getxPos(), 
-					mouse->getyPos(), 
-					window->viewerWidth, 
-					window->viewerHeight, 
-					window->bufferWidth, 
-					window->bufferHeight));
-
-			//glm::vec3 ray = mouse->Raycast(window, *mats);
-			//model->getInterceptedVertices(ray, camera->Position);
-			//model2->getInterceptedVertices(ray, camera->Position);
+	void processInput() {
+		if (mouse->getisLMBPressed() && firstClick) {
+			firstClick = false;
+			std::cout << "FirstClick" << std::endl;
+			Utilities::PixelData pixelData = verticeDataFramebuffer->getDataAtPixel(
+				mouse->getxPos(),
+				mouse->getyPos(),
+				window->viewerWidth,
+				window->viewerHeight,
+				window->bufferWidth,
+				window->bufferHeight);
+			if (pixelData.g == 1.0f) { // UI Elements
+				UIElement* uiElement = outliner->getUIElement(pixelData.r - 1);
+				Utilities::UIElementType type = uiElement->getType();
+				switch(type) {
+				case Utilities::GizmoXAxisArrow:
+				case Utilities::GizmoYAxisArrow:
+				case Utilities::GizmoZAxisArrow:
+				case Utilities::GizmoCenter:
+					uiElement->setIsHighlighted(true);
+					break;
+				default:
+					break;
+				}
+			}
+			else { // vertices or other stuff
+				model2->setSelectedVertices(pixelData);
+			}
+		}
+		else {
+			if(!mouse->getisLMBPressed())
+				firstClick = true;
+			for (int i = 0; i < outliner->getNumUIElements(); i++) {
+				outliner->getUIElement(i)->setIsHighlighted(false);
+			}
 		}
 
+		if (isGrabbing)
+			grab();
+	}
+	void runCurrentState() {
+		uiStateMachine.update();
+	}
+	void showObjectInspector() {
 		ImGui::Begin("Object Inspector");
 
 		static ImGuiTableFlags flags =
@@ -442,7 +506,7 @@ private:
 
 			if (ImGui::TreeNode("UI Elements Outliner")) {
 				for (int i = 0; i < outliner->getNumUIElements(); i++) {
-					if (ImGui::TreeNode(outliner->getUIElement(i)->getName().c_str())) {
+					if (ImGui::TreeNode(Utilities::getUIElementNameFromType(outliner->getUIElement(i)->getType()).c_str())) {
 						showUIElementTables(outliner->getUIElement(i));
 						ImGui::TreePop();
 					}
@@ -474,14 +538,15 @@ private:
 			glfwGetCursorPos(window->windowPointer, &xPos, &yPos);
 			mouse->setxPos(xPos);
 			mouse->setyPos(yPos);
-			if (xPos > window->bufferWidth)
-				xPos = xPos - window->bufferWidth;
+			if (xPos > window->viewerWidth)
+				xPos = xPos - window->viewerWidth;
 			if (xPos < 0)
-				xPos += window->bufferWidth;
-			if (yPos > window->bufferHeight)
-				yPos -= window->bufferHeight;
-			if (yPos < 0)
-				yPos += window->bufferHeight;
+				xPos += window->viewerWidth;
+			if (yPos > window->viewerHeight)
+				yPos -= window->viewerHeight;
+			if (yPos< 0)
+				yPos += window->viewerHeight;
+			
 			glfwSetCursorPos(window->windowPointer, xPos, yPos);
 		}
 	}
@@ -501,14 +566,15 @@ private:
 			ImVec2(0, 1),
 			ImVec2(1, 0)
 		);
-
-		/*ImGui::GetWindowDrawList()->AddImage(
-			(void*)verticeDataFramebuffer->getTextureID(),
-			ImVec2(window->viewerXPos, window->viewerYPos),
-			ImVec2(window->viewerXPos + window->viewerWidth, window->viewerYPos + window->viewerHeight),
-			ImVec2(0, 1),
-			ImVec2(1, 0)
-		);*/
+		if (displayUIFramebuffer) {
+			ImGui::GetWindowDrawList()->AddImage(
+				(void*)verticeDataFramebuffer->getTextureID(),
+				ImVec2(window->viewerXPos, window->viewerYPos),
+				ImVec2(window->viewerXPos + window->viewerWidth, window->viewerYPos + window->viewerHeight),
+				ImVec2(0, 1),
+				ImVec2(1, 0)
+			);
+		}
 	}
 
 	void showModelTables(Model2::Model2* model) {
@@ -695,5 +761,12 @@ private:
 		}
 		*/
 		uiElement->showTables();
+	}
+
+	void grab() {
+		if (Utilities::getCurrentTimeInMS() - mouse->getMovingTime() < 5) {
+			model2->translateSelectedVertices(mouse->getOffset().y * 0.005f, camera->Up);
+			model2->translateSelectedVertices(mouse->getOffset().x * 0.005f, camera->Right);
+		}
 	}
 };

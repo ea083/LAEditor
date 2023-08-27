@@ -12,7 +12,7 @@
 
 class Gizmo {
 public:
-	Gizmo() {}
+	Gizmo() : selectedAxis(Utilities::axis::X) {}
 
 	void init() {
 		xArrow.init(Utilities::X, Utilities::GizmoXAxisArrow);
@@ -21,7 +21,7 @@ public:
 		gizmoCenter.init();
 	}
 
-	void draw(Shader *shader) {
+	void draw(Shader* shader) {
 		shader->use();
 		shader->setInt("outlinerIndex", xArrow.getIndex());
 		xArrow.draw(shader, model);

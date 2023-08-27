@@ -1,14 +1,33 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 #include <string>
+#include <sstream>
+#include <iomanip>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <chrono>
 
+class Mouse;
+class Model;
+class Camera;
+class Window;
+
 namespace Utilities {
+
+	struct AppPointers {
+		Mouse* mouse = nullptr;
+		Model* model = nullptr;
+		Camera* camera = nullptr;
+		Window* window = nullptr;
+	};
 
 	enum axis {
 		X,
@@ -22,7 +41,7 @@ namespace Utilities {
 		GizmoZAxisArrow,
 		GizmoCenter
 	};
-
+	
 	std::string getUIElementNameFromType(UIElementType type) {
 		std::string returnString;
 		switch (type) {
@@ -44,11 +63,41 @@ namespace Utilities {
 		}
 	}
 
-	std::string returnAStringasdfasfasdfasdf() {
-		std::string aString = std::string("asdf");
-		return aString;
+	bool startDebugTable(std::string tableName, std::string firstColName, std::string secondColName) {
+		static ImGuiTableFlags flags =
+			ImGuiTableFlags_Borders |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_SizingFixedFit |
+			ImGuiTableFlags_ScrollY |
+			ImGuiTableFlags_ScrollX;
+		ImVec2 outer_size = ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() * 10);
+		if (ImGui::BeginTable(tableName.c_str(), 2, flags, outer_size)) {
+			ImGui::TableSetupScrollFreeze(1, 1);
+			ImGui::TableSetupColumn(firstColName.c_str());
+			ImGui::TableSetupColumn(secondColName.c_str());
+			ImGui::TableHeadersRow();
+			return true;
+		}
+		return false;
 	}
-
+	void nameVariableDebugTable(void* varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		std::stringstream stream;
+		stream << std::hex << reinterpret_cast<uintptr_t>(varVal);
+		std::string addressString = stream.str();
+		addressString = "0x" + addressString;
+		ImGui::TextUnformatted(addressString.c_str());
+	}
+	void nameVariableDebugTable(std::string varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		ImGui::TextUnformatted(varVal.c_str());
+	}
 	void nameVariableDebugTable(int varVal, std::string varName) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -56,7 +105,6 @@ namespace Utilities {
 		ImGui::TableSetColumnIndex(1);
 		ImGui::TextUnformatted(std::to_string(varVal).c_str());
 	}
-
 	void nameVariableDebugTable(long varVal, std::string varName) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -64,15 +112,20 @@ namespace Utilities {
 		ImGui::TableSetColumnIndex(1);
 		ImGui::TextUnformatted(std::to_string(varVal).c_str());
 	}
-
+	void nameVariableDebugTable(uint32_t varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		ImGui::TextUnformatted(std::to_string(varVal).c_str());
+	}
 	void nameVariableDebugTable(float varVal, std::string varName) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
 		ImGui::TextUnformatted(varName.c_str());
-		ImGui::TableSetColumnIndex(1); 
+		ImGui::TableSetColumnIndex(1);
 		ImGui::TextUnformatted(std::to_string(varVal).c_str());
 	}
-
 	void nameVariableDebugTable(bool varVal, std::string varName) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -85,7 +138,7 @@ namespace Utilities {
 		auto currentTime = std::chrono::system_clock::now();
 		auto currentTimeMs = std::chrono::time_point_cast<std::chrono::milliseconds>(currentTime);
 		auto currentTimeMsValue = currentTimeMs.time_since_epoch().count();
-		return currentTimeMsValue;
+		return (long)currentTimeMsValue;
 	}
 
 	struct Vertex {
@@ -112,9 +165,9 @@ namespace Utilities {
 
 	double discriminant(glm::vec3 rayDirection, glm::vec3 rayOrigin, glm::vec3 sphereCenter, double sphereRadius) {
 		glm::vec3 rayOriginToSphere = rayOrigin - sphereCenter;
-		float a = glm::dot(rayDirection, rayDirection);
-		float b = 2.0f * glm::dot(rayOriginToSphere, rayDirection);
-		float c = glm::dot(rayOriginToSphere, rayOriginToSphere) - (sphereRadius * sphereRadius);
+		double a = glm::dot(rayDirection, rayDirection);
+		double b = 2.0f * glm::dot(rayOriginToSphere, rayDirection);
+		double c = glm::dot(rayOriginToSphere, rayOriginToSphere) - (sphereRadius * sphereRadius);
 
 		return (b * b) - (4.0f * a * c);
 	}
@@ -134,11 +187,11 @@ namespace Utilities {
 		return static_cast<float>(value) / 255.0f;
 	}
 
-	unsigned int generateVAO(
-		unsigned int VAO, 
-		unsigned int VBO, 
-		unsigned int EBO, 
-		std::vector<Vertex> vertices, 
+	/*unsigned int generateVAO(
+		unsigned int VAO,
+		unsigned int VBO,
+		unsigned int EBO,
+		std::vector<Vertex> vertices,
 		std::vector<unsigned int> indices) {
 
 		glGenVertexArrays(1, &VAO);
@@ -163,6 +216,7 @@ namespace Utilities {
 		return VAO;
 
 	}
+	*/
 
 	void generateCone(int numDivisions,
 		float radius,
@@ -175,7 +229,7 @@ namespace Utilities {
 		std::vector<unsigned int> tempIndices;
 		Vertex tempVert;
 		for (int i = 0; i < numDivisions; i++) {
-			const float degrees = i * 360 / numDivisions;
+			const float degrees = (float)(i * 360 / numDivisions);
 			tempVert.Position = glm::vec3(
 				radius * sin(glm::radians(degrees)),
 				radius * cos(glm::radians(degrees)),
@@ -184,16 +238,16 @@ namespace Utilities {
 			tempVertices.push_back(tempVert);
 		}
 		// tip of cone
-		tempVert.Position = glm::vec3(0.0f, 0.0f,  1.0f * height);
+		tempVert.Position = glm::vec3(0.0f, 0.0f, 1.0f * height);
 		tempVertices.push_back(tempVert);
-		int tipOfCone = tempVertices.size() - 1;
+		int tipOfCone = (int)tempVertices.size() - 1;
 
 		// center of circle
 		tempVert.Position = glm::vec3(0.0f);
 		tempVertices.push_back(tempVert);
-		int centerOfCircle = tempVertices.size() - 1;
+		int centerOfCircle = (int)tempVertices.size() - 1;
 
-		int lastCircleVert = tempVertices.size() - 3;
+		int lastCircleVert = (int)tempVertices.size() - 3;
 
 		for (int i = 0; i < tipOfCone; i++) {
 			if (i < lastCircleVert) {
@@ -228,10 +282,10 @@ namespace Utilities {
 
 	}
 
-	void generateCylinder(int numDivisions, 
-		float radius, 
-		float height, 
-		std::vector<Vertex>& vertices, 
+	void generateCylinder(int numDivisions,
+		float radius,
+		float height,
+		std::vector<Vertex>& vertices,
 		std::vector<unsigned int>& indices,
 		glm::vec3 offset) {
 
@@ -239,7 +293,7 @@ namespace Utilities {
 		std::vector<unsigned int> tempIndices;
 		Vertex tempVert;
 		for (int i = 0; i < numDivisions; i++) {
-			const float degrees = i * 360 / numDivisions;
+			const float degrees = (float) (i * 360 / numDivisions);
 			// 0, 2, 4 ... are bot of cylinder
 			tempVert.Position = glm::vec3(
 				radius * sin(glm::radians(degrees)),
@@ -277,14 +331,14 @@ namespace Utilities {
 
 				tempIndices.push_back(i);
 				tempIndices.push_back(i + 2);
-				if(i % 2 == 0)
+				if (i % 2 == 0)
 					tempIndices.push_back(centerOfBotCircle);
 				else
 					tempIndices.push_back(centerOfTopcircle);
 			}
 			else if (i == lastCircleVert - 1) {
 				tempIndices.push_back(i);
-				tempIndices.push_back(i+1);
+				tempIndices.push_back(i + 1);
 				tempIndices.push_back(0);
 
 				tempIndices.push_back(i);
@@ -319,7 +373,7 @@ namespace Utilities {
 
 	}
 
-	void generateCube(float edgeLength, std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, glm::vec3 offset) {
-		generateCylinder(4, edgeLength/2, edgeLength*0.75, vertices, indices, offset);
+	void generateCube(float edgeLength, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, glm::vec3 offset) {
+		generateCylinder(4, edgeLength / 2, edgeLength * 0.75, vertices, indices, offset);
 	}
 }

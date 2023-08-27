@@ -1,5 +1,4 @@
-#ifndef SHADER_H // checks if macro SHADER_H is defined
-#define SHADER_H
+#pragma once
 
 #include <glad/glad.h> // for required OpenGL headers
 #include <glm/glm.hpp>
@@ -15,7 +14,7 @@ class Shader {
 public:
 	unsigned int ID; // program ID
 
-	Shader() {}
+	Shader() : ID(0) {}
 
 	// reads and builds shader
 	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr) {
@@ -63,11 +62,11 @@ public:
 
 		// compile shaders
 		unsigned int vertex, fragment;
-		int success;
-		char infoLog[512];
+		//int success;
+		//char infoLog[512];
 
 		// vertex shader
- 		vertex = glCreateShader(GL_VERTEX_SHADER);
+		vertex = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertex, 1, &vShaderCode, NULL);
 		glCompileShader(vertex);
 		// print compile errors
@@ -192,5 +191,3 @@ private:
 		}
 	}
 };
-
-#endif

@@ -1,6 +1,3 @@
-#ifndef CAMERA_H
-#define CAMERA_H
-
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -22,7 +19,7 @@ const float YAW = -90.0f;
 const float PITCH = 0.0f;
 const float SPEED = 2.0f;
 const float SENSITIVITY = 0.1f;
-const float ORBITSENSITIVITY = 0.005;
+const float ORBITSENSITIVITY = 0.005f;
 const float ZOOM = 60.0f;
 const float RADIUS = 10.0f;
 
@@ -65,9 +62,9 @@ public:
 		float yaw = YAW,
 		float pitch = PITCH,
 		bool isOrbit = true) :
-		Front(glm::vec3(0.0f, 0.0f, -1.0f)), 
-		MovementSpeed(SPEED), 
-		MouseSensitivity(SENSITIVITY), 
+		Front(glm::vec3(0.0f, 0.0f, -1.0f)),
+		MovementSpeed(SPEED),
+		MouseSensitivity(SENSITIVITY),
 		Zoom(ZOOM),
 		Radius(RADIUS),
 		OrbitSensitivity(ORBITSENSITIVITY) {
@@ -97,7 +94,8 @@ public:
 	{
 		if (IsOrbit) {
 			return glm::lookAt(Position, Pivot, Up);
-		}else
+		}
+		else
 			return glm::lookAt(Position, Position + Front, Up);
 	}
 
@@ -134,8 +132,8 @@ public:
 		if (IsOrbit) {
 			if (canOrbit) {
 				if (isShiftPan || isMousePan) {
-					xoffset *= -OrbitSensitivity * glm::abs(glm::length(Position - Pivot)) * 0.1;
-					yoffset *= -OrbitSensitivity * glm::abs(glm::length(Position - Pivot)) * 0.1;
+					xoffset *= (float)(-OrbitSensitivity * glm::abs(glm::length(Position - Pivot)) * 0.1);
+					yoffset *= (float)(-OrbitSensitivity * glm::abs(glm::length(Position - Pivot)) * 0.1);
 					Position += Right * xoffset;
 					Position += Up * yoffset;
 					Pivot += Right * xoffset;
@@ -180,8 +178,8 @@ public:
 	void ProcessMouseScroll(float yoffset)
 	{
 		if (IsOrbit) {
-			Position += Front * yoffset * 0.1f * (Radius-0.1);//(glm::abs(glm::length(Position - Pivot)));
-			if(glm::distance(Position, Pivot) < 0.1f)
+			Position += Front * yoffset * 0.1f * (Radius - 0.1);//(glm::abs(glm::length(Position - Pivot)));
+			if (glm::distance(Position, Pivot) < 0.1f)
 				Position -= Front * yoffset * 0.1f;
 			//Radius = glm::length(glm::vec2(Position.x, Position.z) - glm::vec2(Pivot.x, Pivot.z));
 			Radius = glm::length(Position - Pivot);
@@ -207,7 +205,7 @@ private:
 			// also re-calculate the Right and Up vector
 			Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 			Up = glm::normalize(glm::cross(Right, Front));
-			float horizontalRadius = cos(Pitch)* Radius;
+			float horizontalRadius = cos(Pitch) * Radius;
 			float camX = (sin(Yaw) * horizontalRadius);
 			float camY = sin(Pitch) * Radius;
 			float camZ = (cos(Yaw) * horizontalRadius);
@@ -229,5 +227,3 @@ private:
 		}
 	}
 };
-
-#endif

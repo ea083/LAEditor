@@ -11,7 +11,7 @@
 
 class UIGizmoCenter : public UIElement {
 public:
-	UIGizmoCenter() {	}
+	UIGizmoCenter() : EBO(0), VAO(0), VBO(0) {	}
 
 	void init() override {
 		setType(Utilities::GizmoCenter);

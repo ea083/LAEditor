@@ -11,7 +11,7 @@
 class VerticeDataFramebuffer {
 public:
 
-	VerticeDataFramebuffer() {}
+	VerticeDataFramebuffer() : FBO(0), RBO(0), textureID(0) {}
 
 	void initVerticeDataFramebuffer(int width, int height) {
 		glGenFramebuffers(1, &FBO);
@@ -47,24 +47,24 @@ public:
 
 	void rescaleFramebuffer(float width, float height) {
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, (GLsizei)width, (GLsizei)height, 0, GL_RGB, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0);
 
 		glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (GLsizei)width, (GLsizei)height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 	}
 
-	Utilities::PixelData getDataAtPixel(int x, int y, float width, float height, float windowWidth, float windowHeight ) {
+	Utilities::PixelData getDataAtPixel(int x, int y, float width, float height, float windowWidth, float windowHeight) {
 		//x = x - width + viewerXPos; 
-		x = x * (windowWidth / width) - 14;
-		y = y * (windowHeight / height) - 50;
-		y = windowHeight - y;
+		x = (int)(x * (windowWidth / width) - 14);
+		y = (int)(y * (windowHeight / height) - 50);
+		y = (int)(windowHeight - y);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
-		std::vector<float> pixelData(width * height * 3);
+		std::vector<float> pixelData((const unsigned __int64)(width * height * 3));
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, pixelData.data());
 		glBindTexture(GL_TEXTURE_2D, 0);

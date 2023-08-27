@@ -5,19 +5,24 @@
 #include <iostream>
 
 #include "Utilities.h"
+#include "Settings.h"
+
 
 class Window
 {
 public:
-	GLFWwindow* windowPointer;
-	int bufferWidth, bufferHeight;
-	double viewerWidth, viewerHeight, viewerXPos, viewerYPos;
-
-	Window() {
-		GLFWwindow* windowPointer = NULL;
+	Window() :
+		bufferWidth(Settings::WIN_WIDTH),
+		bufferHeight(Settings::WIN_HEIGHT),
+		viewerWidth(Settings::WIN_WIDTH),
+		viewerHeight(Settings::WIN_HEIGHT),
+		viewerXPos(0),
+		viewerYPos(0),
+		windowPointer(nullptr) {
 	}
 
-	~Window() {}
+	~Window() {
+	}
 
 	void createWindow(int width, int height, const char* name) {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -39,17 +44,39 @@ public:
 		return;
 	}
 
-	glm::vec2 getWindowSize() {
+	glm::ivec2 getBufferSize() {
 		return glm::vec2(bufferWidth, bufferHeight);
+	}
+
+	void setBufferSize(glm::ivec2 newSize) {
+		bufferWidth = newSize.x;
+		bufferHeight = newSize.y;
 	}
 
 	glm::vec2 getViewerSize() {
 		return glm::vec2(viewerWidth, viewerHeight);
 	}
 
+	void setViewerSize(glm::vec2 newSize) {
+		viewerWidth = newSize.x;
+		viewerHeight = newSize.y;
+	}
+
 	glm::vec2 getViewerPos() {
 		return glm::vec2(viewerXPos, viewerYPos);
 	}
 
+	void setViewerPos(glm::vec2 newPos) {
+		viewerXPos = newPos.x;
+		viewerYPos = newPos.y;
+	}
+
+	GLFWwindow* getPointer() {
+		return windowPointer;
+	}
+
 private:
+	GLFWwindow* windowPointer;
+	int bufferWidth, bufferHeight;
+	double viewerWidth, viewerHeight, viewerXPos, viewerYPos;
 };

@@ -8,7 +8,7 @@ public:
 
 	}
 	virtual void draw(Shader* shader, glm::mat4 model) {
-		 
+
 	}
 
 	virtual void showTables() {
@@ -88,7 +88,7 @@ public:
 	}
 
 	int getNumVertices() {
-		return vertices.size();
+		return (int)vertices.size();
 	}
 
 	Utilities::UIElementType getType() {

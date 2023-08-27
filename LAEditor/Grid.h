@@ -4,13 +4,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 #include "Shader.h"
-
 
 class Grid {
 public:
-	Grid() {
+	Grid() : EBO(0), VAO(0), VBO(0) {
 
 	}
 

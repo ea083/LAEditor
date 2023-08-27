@@ -11,7 +11,7 @@
 
 class UIArrow : public UIElement {
 public:
-	UIArrow() {	}
+	UIArrow() : EBO(0), VAO(0), VBO(0), axis(Utilities::axis::X) {	}
 
 	void init() override {
 		setType(Utilities::GizmoXAxisArrow);
@@ -25,11 +25,11 @@ public:
 		setType(type);
 		this->axis = axis;
 		Utilities::generateCone(32, 0.25f, 0.5f, vertices, indices, glm::vec3(0.0f, 0.0f, 2.0f));
-		Utilities::generateCylinder(32, 0.05, 2.0f, vertices, indices, glm::vec3(0.0f, 0.0f, 1.0f));
+		Utilities::generateCylinder(32, 0.05f, 2.0f, vertices, indices, glm::vec3(0.0f, 0.0f, 1.0f));
 		setVAO();
 	}
 
-	void draw(Shader *shader, glm::mat4 model) override{
+	void draw(Shader* shader, glm::mat4 model) override {
 		shader->use();
 		shader->setBool("isHighlighted", isHighlighted);
 		//glm::mat4 model = glm::mat4(1.0f);
@@ -116,17 +116,17 @@ public:
 		}
 	}
 
-	
+
 
 private:
 
 	unsigned int VAO, VBO, EBO;
 	Utilities::axis axis;
-	
+
 	void generateCone(int numDivisions, float radius) {
 		Utilities::Vertex tempVert;
 		for (int i = 0; i < numDivisions; i++) {
-			const float degrees = i * 360 / numDivisions;
+			const float degrees = (float)(i * 360 / numDivisions);
 			tempVert.Position = glm::vec3(
 				radius * sin(glm::radians(degrees)),
 				radius * cos(glm::radians(degrees)),
@@ -139,8 +139,8 @@ private:
 		vertices.push_back(tempVert);
 		addVertex(tempVert);
 
-		int tipOfCone = vertices.size() - 1;
-		int lastCircleVert = vertices.size() - 2;
+		int tipOfCone = (int)(vertices.size() - 1);
+		int lastCircleVert = (int)(vertices.size() - 2);
 
 		for (int i = 0; i < tipOfCone; i++) {
 			if (i < lastCircleVert) {

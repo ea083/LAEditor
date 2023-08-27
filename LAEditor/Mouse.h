@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utilities.h"
+#include "Window.h"
 #include <iostream>
 
 class Mouse {
@@ -76,10 +77,10 @@ public:
 	bool getfirstMouse() { return firstMouse; }
 	bool getis3DViewerFocused() { return is3DViewerFocused; }
 
-	void setxPos(int xPos) { this->xPos = xPos;}
-	void setyPos(int yPos) { this->yPos = yPos;}
+	void setxPos(int xPos) { this->xPos = xPos; }
+	void setyPos(int yPos) { this->yPos = yPos; }
 
-	void setisLMBPressed(bool isLMBPressed) { 
+	void setisLMBPressed(bool isLMBPressed) {
 		isLMBPressedLastFrame = isLMBPressed;
 		this->isLMBPressed = isLMBPressed;
 	}
@@ -122,7 +123,7 @@ public:
 
 		return WorldCoordinatesRay;
 	}
-	
+
 private:
 	float lastX = 400.0f;
 	float lastY = 300.0f;
@@ -137,6 +138,6 @@ private:
 
 	float xoffset = 0, yoffset = 0;
 
-	
+
 	long movingTime = Utilities::getCurrentTimeInMS();
 };

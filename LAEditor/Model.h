@@ -1,323 +1,379 @@
 #pragma once
 
-#include <glad/glad.h> 
-
-#include "Utilities.h"
+#include <glad/glad.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#include "Shader.h"
-#include "Mesh.h"
-
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <map>
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false);
+#include "Utilities.h"
+#include "GLUtilities.h"
+#include "Shader.h"
 
-struct displayVertex {
-	glm::vec3 Position;
-	glm::vec3 Normal;
-	glm::vec2 TexCoords;
-	glm::vec3 Tangent;
-	glm::vec3 Bitangent;
-	vector<Vertex*> children;
-	bool operator==(const displayVertex& other) const {
-		return Position == other.Position;
-	}
-	void setPos(glm::vec3 newPos) {
-		Position = newPos;
-		for (int i = 0; i < children.size(); i++) {
-			children[i]->Position = newPos;
-			if (children[i]->mesh != nullptr)
-				children[i]->mesh->updateVertexPos();
-		}
-	}
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Delaunay_triangulation_3.h>
+//
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+//typedef CGAL::Delaunay_triangulation_3<K> Delaunay;
+//typedef K::Point_3 Point_3;
+
+struct face {
+	std::vector<unsigned int> vertIndices;
 };
 
 class Model {
 public:
-	// model data
-	std::vector<Texture> textures_loaded;
-	std::vector<Mesh> meshes;
-	std::string directory;
-	bool gammaCorrection; 
+	Model() : EBO(0), VAO(0), VBO(0), edgeEBO(0), edgeVAO(0), edgeVBO(0), selectedVertEBO(0), selectedVertVAO(0), selectedVertVBO(0) {
 
-	std::vector<displayVertex> origVertices;
-
-	Model() {
-		gammaCorrection = false;
 	}
-
-	Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma) {
+	Model(std::string const& path) : EBO(0), VAO(0), VBO(0), edgeEBO(0), edgeVAO(0), edgeVBO(0), selectedVertEBO(0), selectedVertVAO(0), selectedVertVBO(0) {
 		loadModel(path);
 	}
 
-	void replaceModel(std::string const &path, bool gamma = false) {
-		textures_loaded.clear();
-		meshes.clear();
-		directory.clear();
-		origVertices.clear();
-		loadModel(path);
-	}
+	void Draw(Shader& shader, Shader* vertShader = NULL, Shader* selectedVertShader = NULL, Shader* edgeShader = NULL, bool ignoreFaces = false) {
+		glBindVertexArray(VAO);
+		shader.use();
+		shader.setBool("textured", false);
+		shader.setBool("ignore", ignoreFaces);
+		glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
 
-	void Draw(Shader& shader, Shader* vertShader = NULL, bool textured = false) {
-		shader.setInt("selectedIndex", selectedIndex);
-		for (unsigned int i = 0; i < meshes.size(); i++)
-			if(vertShader != NULL)
-				meshes[i].Draw(shader, vertShader, textured);
-			else
-				meshes[i].Draw(shader, NULL, textured);
-	}
-
-	std::vector<displayVertex> getInterceptedVertices(glm::vec3 Ray, glm::vec3 cameraPos) {
-		std::vector<displayVertex> interceptedVerts;
-		for (int i = 0; i < origVertices.size(); i++) {
-			if (Utilities::discriminant(Ray, cameraPos, origVertices[i].Position, 0.5f) >= 0) {
-				interceptedVerts.push_back(origVertices[i]);
-				std::cout << "Vertex " << i << " at pos " << 
-					origVertices[i].Position.x << ", " <<
-					origVertices[i].Position.y << ", " <<
-					origVertices[i].Position.z << 
-					std::endl;
-			}
+		if (vertShader != NULL) {
+			glEnable(GL_PROGRAM_POINT_SIZE);
+			vertShader->use();
+			vertShader->setBool("ignore", false);
+			glDrawElements(GL_POINTS, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
 		}
-		std::cout << std::endl;
-		selectClosest(interceptedVerts, cameraPos);
-		return interceptedVerts;
+		if (selectedVertShader != NULL) {
+			glDisable(GL_DEPTH_TEST);
+			glBindVertexArray(selectedVertVAO);
+			glEnable(GL_PROGRAM_POINT_SIZE);
+			selectedVertShader->use();
+			selectedVertShader->setBool("ignore", false);
+			glDrawElements(GL_POINTS, static_cast<unsigned int>(selectedVerticesIndices.size()), GL_UNSIGNED_INT, 0);
+			glEnable(GL_DEPTH_TEST);
+
+		}
+		if (edgeShader != NULL) {
+			glBindVertexArray(edgeVAO);
+			edgeShader->use();
+			glDrawElements(GL_LINES, static_cast<unsigned int>(edgeIndices.size()), GL_UNSIGNED_INT, 0);
+		}
+
+		glBindVertexArray(0);
+	}
+	void getInterceptedVertices(glm::vec3 Ray, glm::vec3 cameraPos) {
+		selectedVerticesIndices.clear();
+		for (int i = 0; i < vertices.size(); i++) {
+			float dist = glm::distance(cameraPos, vertices[i].Position);
+			if (Utilities::raySphereIntersection(Ray, cameraPos, vertices[i].Position, 0.025f * dist)) {
+				selectedVerticesIndices.push_back(i);
+			}
+			/*if (Utilities::discriminant(Ray, cameraPos, vertices[i].Position, 0.1f * dist) >= 0) {
+				std::cout << "Intercepted Vertex " << i << " at pos " <<
+					vertices[i].Position.x << ", " <<
+					vertices[i].Position.y << ", " <<
+					vertices[i].Position.z << std::endl;
+				selectedVerticesIndices.push_back(i);
+			}*/
+		}
+		setSelectedVerticeVAO();
+
+	}
+	void setSelectedVertices(Utilities::PixelData pixelData) {
+		selectedVerticesIndices.clear();
+		int index = (int)(pixelData.r - 1);
+		if (index < 0 || index > vertices.size()) {
+			std::cout << "ERROR::MODEL2::Selected Vertice out of range!" << std::endl;
+			return;
+		}
+		selectedVerticesIndices.push_back(index);
+		for (int i = 0; i < vertices[index].connectedVertsIndices.size(); i++)
+			selectedVerticesIndices.push_back(vertices[index].connectedVertsIndices[i]);
+
+		setSelectedVerticeVAO();
+	}
+	int getNumSelectedVertices() {
+		return (int)selectedVerticesIndices.size();
+	}
+	glm::vec3 getSelectedVerticesMedian() {
+		glm::vec3 median = glm::vec3(0.0f);
+		for (const unsigned int index : selectedVerticesIndices) {
+			median += vertices[index].Position;
+		}
+		median /= selectedVerticesIndices.size();
+		return median;
+	}
+	void translateSelectedVertices(float distance, glm::vec3 direction) {
+		const glm::vec3 delta = distance * glm::normalize(direction);
+		for (int i = 0; i < selectedVerticesIndices.size(); i++) {
+			const int currIndex = selectedVerticesIndices[i];
+			vertices[currIndex].Position += delta;
+			for (int j = 0; j < vertices[currIndex].connectedVerts.size(); j++)
+				vertices[currIndex].connectedVerts[j]->Position += delta;
+
+		}
+		setVAO();
+		setSelectedVerticeVAO();
 	}
 
-	int selectedIndex = 0;
+	Utilities::Vertex getVertex(int index) {
+		if (index < vertices.size() && index >= 0)
+			return vertices[index];
+		std::cout << "ERROR::MODEL2::getVertex - Vertex index out of bounds" << std::endl;
+		Utilities::Vertex nullVertex;
+		return nullVertex;
+	}
+	face getFace(int index) {
+		if (index < faces.size() && index >= 0)
+			return faces[index];
+		std::cout << "ERROR::MODEL2::getFace - Face index out of bounds" << std::endl;
+		face nullFace;
+		return nullFace;
+	}
+	unsigned int getIndice(int index) {
+		if (index < indices.size() && index >= 0)
+			return indices[index];
+		std::cout << "ERROR::MODEL2::getIndice - Indice index out of bounds" << std::endl;
+		return NULL;
+	}
+	unsigned int getEdgeIndice(int index) {
+		if (index < edgeIndices.size() && index >= 0)
+			return edgeIndices[index];
+		std::cout << "ERROR::MODEL2::getEdgeIndice - Indice index out of bounds" << std::endl;
+		return NULL;
+	}
+
+	int getNumVertices() {
+		return (int)vertices.size();
+	}
+	int getNumFaces() {
+		return (int)faces.size();
+	}
+	int getNumIndices() {
+		return (int)indices.size();
+	}
+	int getNumEdgeIndices() {
+		return (int)edgeIndices.size();
+	}
+	std::string getName() { return name; }
+
 private:
-	void selectClosest(std::vector<displayVertex> interceptedVerts, glm::vec3 cameraPos) {
-		if (!interceptedVerts.size() == 0) {
-			double closest = 100000.0f;
-			int closestIndex = selectedIndex;
-			for (int i = 0; i < interceptedVerts.size(); i++) {
-				double distance = glm::distance(interceptedVerts[i].Position, cameraPos);
-				if (distance < closest) {
-					closest = distance;
-					closestIndex = i;
-				}
-			}
-			//selectedIndex = closestIndex;
-			std::cout << "selected Index: " << selectedIndex << std::endl;
-		}
-		else {
-			//std::cout << "No intercepted Vertices" << std::endl;
-		}
-	}
+	std::string directory;
+	std::string name;
+	std::vector<Utilities::Vertex> vertices;
+	std::vector<face> faces;
+	std::vector<unsigned int> indices;
+	std::vector<unsigned int> edgeIndices;
+	std::vector<unsigned int> selectedVerticesIndices;
+
+
+	unsigned int VAO, VBO, EBO;
+	unsigned int selectedVertVAO, selectedVertVBO, selectedVertEBO;
+	unsigned int edgeVAO, edgeVBO, edgeEBO;
 
 	void loadModel(std::string path) {
 		Assimp::Importer import;
-		const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals /* | aiProcess_FlipUVs */ | aiProcess_CalcTangentSpace);
-		// check for errors
+		const aiScene* scene = import.ReadFile(path, /*aiProcess_Triangulate |*/ aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
+
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
 			return;
 		}
-		directory = path.substr(0, path.find_last_of('/'));
-		processOrigVertices(scene);
-		processNode(scene->mRootNode, scene);
-		processDisplayVertChildren();
+		if (path.find('/') == std::string::npos) {
+			name = path;
+			directory = "";
+		}
+		else {
+			directory = path.substr(0, path.find_last_of('/'));
+			name = path.substr(path.find_last_of('/'), (path.size() - 1) - path.find_last_of('/'));
+		}
+		storeModel(scene);
+		//displayData(scene);
+	}
+	void storeModel(const aiScene* scene) {
+		for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
+			for (unsigned int j = 0; j < scene->mMeshes[i]->mNumVertices; j++) {
+				Utilities::Vertex tempVertex;
+				tempVertex.Position.x = scene->mMeshes[i]->mVertices[j].x;
+				tempVertex.Position.y = scene->mMeshes[i]->mVertices[j].y;
+				tempVertex.Position.z = scene->mMeshes[i]->mVertices[j].z;
+
+				tempVertex.Normal.x = scene->mMeshes[i]->mNormals[j].x;
+				tempVertex.Normal.y = scene->mMeshes[i]->mNormals[j].y;
+				tempVertex.Normal.z = scene->mMeshes[i]->mNormals[j].z;
+				vertices.push_back(tempVertex);
+			}
+
+			for (unsigned int j = 0; j < scene->mMeshes[i]->mNumFaces; j++) {
+				face tempFace;
+				for (unsigned int k = 0; k < scene->mMeshes[i]->mFaces[j].mNumIndices; k++) {
+					tempFace.vertIndices.push_back(scene->mMeshes[i]->mFaces[j].mIndices[k]);
+				}
+				faces.push_back(tempFace);
+			}
+		}
+
+		for (unsigned int i = 0; i < faces.size(); i++) {
+			for (unsigned int j = 0; j < faces[i].vertIndices.size(); j++) {
+				if (j < faces[i].vertIndices.size() - 1) {
+					edgeIndices.push_back(faces[i].vertIndices[j]);
+					edgeIndices.push_back(faces[i].vertIndices[j + 1]);
+				}
+				else {
+					edgeIndices.push_back(faces[i].vertIndices[j]);
+					edgeIndices.push_back(faces[i].vertIndices[0]);
+				}
+			}
+		}
+
+
+		setConnectedVertices();
+		triangulateFaces();
+
+		setVAO();
+		setSelectedVerticeVAO();
 	}
 
-	void processDisplayVertChildren() {
-		for (int i = 0; i < meshes.size(); i++) {
-			for (int j = 0; j < meshes[i].vertices.size(); j++) {
-				for (int k = 0; k < origVertices.size(); k++) {
-					if (origVertices[k].Position == meshes[i].vertices[j].Position) {
-						origVertices[k].children.push_back(&meshes[i].vertices[j]);
-					}
+	void setVAO() {
+		// vertice VAO
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &EBO);
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Utilities::Vertex), &vertices[0], GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
+
+		// vertex Positions
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Utilities::Vertex), (void*)0);
+		// vertex normals
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Utilities::Vertex), (void*)offsetof(Utilities::Vertex, Normal));
+
+		glBindVertexArray(0);
+
+		// edge VAO
+		glGenVertexArrays(1, &edgeVAO);
+		glGenBuffers(1, &edgeVBO);
+		glGenBuffers(1, &edgeEBO);
+
+		glBindVertexArray(edgeVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, edgeVBO);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Utilities::Vertex), &vertices[0], GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, edgeEBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, edgeIndices.size() * sizeof(unsigned int), &edgeIndices[0], GL_DYNAMIC_DRAW);
+
+		// vertex Positions
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Utilities::Vertex), (void*)0);
+		// vertex normals
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Utilities::Vertex), (void*)offsetof(Utilities::Vertex, Normal));
+
+		glBindVertexArray(0);
+	}
+	void setSelectedVerticeVAO() {
+		if (selectedVerticesIndices.size() > 0) {
+			glGenVertexArrays(1, &selectedVertVAO);
+			glGenBuffers(1, &selectedVertVBO);
+			glGenBuffers(1, &selectedVertEBO);
+
+			glBindVertexArray(selectedVertVAO);
+			glBindBuffer(GL_ARRAY_BUFFER, selectedVertVBO);
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Utilities::Vertex), &vertices[0], GL_DYNAMIC_DRAW);
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, selectedVertEBO);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, selectedVerticesIndices.size() * sizeof(unsigned int), &selectedVerticesIndices[0], GL_DYNAMIC_DRAW);
+
+			// vertex Positions
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Utilities::Vertex), (void*)0);
+			// vertex normals
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Utilities::Vertex), (void*)offsetof(Utilities::Vertex, Normal));
+		}
+		glBindVertexArray(0);
+	}
+
+	void triangulateFaces() {
+		indices.clear();
+		for (face currFace : faces) {
+			std::vector<unsigned int> triangulatedFaces = traingulateFace(currFace);
+			for (int i = 0; i < triangulatedFaces.size(); i++) {
+				indices.push_back(triangulatedFaces[i]);
+			}
+		}
+	}
+	std::vector<unsigned int> traingulateFace(face currFace) {
+		std::vector<unsigned int> triangulatedFaces;
+		if (currFace.vertIndices.size() < 3)
+			return triangulatedFaces;
+		if (currFace.vertIndices.size() == 3) {
+			triangulatedFaces.push_back(currFace.vertIndices[0]);
+			triangulatedFaces.push_back(currFace.vertIndices[1]);
+			triangulatedFaces.push_back(currFace.vertIndices[2]);
+			return triangulatedFaces;
+		}
+
+		std::vector<unsigned int> remainingVertices = currFace.vertIndices;
+		while (remainingVertices.size() > 3) {
+			triangulatedFaces.push_back(remainingVertices[0]);
+			triangulatedFaces.push_back(remainingVertices[1]);
+			triangulatedFaces.push_back(remainingVertices[2]);
+			remainingVertices.erase(remainingVertices.begin() + 1);
+		}
+
+		triangulatedFaces.push_back(remainingVertices[0]);
+		triangulatedFaces.push_back(remainingVertices[1]);
+		triangulatedFaces.push_back(remainingVertices[2]);
+
+
+		if (triangulatedFaces.size() % 3 != 0)
+			std::cout << "Triangulated Faces not in 3s!!!" << std::endl;
+		return triangulatedFaces;
+
+	}
+	void setConnectedVertices() {
+		for (int i = 0; i < vertices.size(); i++) {
+			for (int j = 0; j < vertices.size(); j++) {
+				if (i == j)
+					continue;
+				if (vertices[i].Position == vertices[j].Position) {
+					vertices[i].connectedVerts.push_back(&vertices[j]);
+					vertices[i].connectedVertsIndices.push_back(j);
 				}
 			}
 		}
 	}
-
-	void processOrigVertices(const aiScene* scene) {
-		for (int meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++) {
-			for (int vertexIndex = 0; vertexIndex < scene->mMeshes[meshIndex]->mNumVertices; vertexIndex++) {
-				displayVertex vertex;
-				vertex.Position.x = scene->mMeshes[meshIndex]->mVertices[vertexIndex].x;
-				vertex.Position.y = scene->mMeshes[meshIndex]->mVertices[vertexIndex].y;
-				vertex.Position.z = scene->mMeshes[meshIndex]->mVertices[vertexIndex].z;
-				auto it = std::find(origVertices.begin(), origVertices.end(), vertex);
-				if(it == origVertices.end())
-					origVertices.push_back(vertex);
+	void displayData(const aiScene* scene) {
+		for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
+			std::cout << "Mesh Name: " << scene->mMeshes[i]->mName.C_Str() << std::endl;
+			std::cout << "Num Vertices: " << scene->mMeshes[i]->mNumVertices << std::endl;
+			std::cout << "vertices: " << std::endl;
+			for (unsigned int j = 0; j < scene->mMeshes[i]->mNumVertices; j++) {
+				std::cout << std::fixed << std::setprecision(3) <<
+					"Index: " << j <<
+					"\tX: " << scene->mMeshes[i]->mVertices[j].x <<
+					"\t Y: " << scene->mMeshes[i]->mVertices[j].y <<
+					"\t Z: " << scene->mMeshes[i]->mVertices[j].z << std::endl;
 			}
-		}
-	}
-
-	void processNode(aiNode* node, const aiScene* scene) {
-		// process all the node's meshes (if any)
-		for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			meshes.push_back(processMesh(mesh, scene));
-			for (int i = 0; i < meshes[meshes.size() - 1].vertices.size(); i++) {
-				meshes[meshes.size() - 1].vertices[i].mesh = &meshes[meshes.size() - 1];
-			}
-		}
-		// then do the same for each of its children
-		for (unsigned int i = 0; i < node->mNumChildren; i++) {
-			processNode(node->mChildren[i], scene);
-		}
-	}
-
-	Mesh processMesh(aiMesh* mesh, const aiScene* scene) {
-		std::vector<Vertex> vertices;
-		std::vector<unsigned int> indices;
-		std::vector<Texture> textures;
-		
-		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-			Vertex vertex;
-			// process vertex positoins, normals and texture coordinates
-			glm::vec3 vector;
-			vector.x = mesh->mVertices[i].x;
-			vector.y = mesh->mVertices[i].y;
-			vector.z = mesh->mVertices[i].z;
-			vertex.Position = vector;
-
-			//displayVertex dvertex;
-			//dvertex.Position.x = vector.x;
-			//dvertex.Position.y = vector.y;
-			//dvertex.Position.z = vector.z;
-			//for (int i = 0; i < origVertices.size(); i++) {
-			//	if (origVertices[i].Position == dvertex.Position) {
-			//		origVertices[i].children.push_back(&vertex);
-			//	}
-			//}
-
-			//auto it = std::find(origVertices.begin(), origVertices.end(), dvertex);
-			//if (it != origVertices.end()) {
-			//	displayVertex parentVertex = *it;
-			//	parentVertex.children.push_back(&vertex);
-			//}
-
-
-			if (mesh->HasNormals()) {
-				vector.x = mesh->mNormals[i].x;
-				vector.y = mesh->mNormals[i].y;
-				vector.z = mesh->mNormals[i].z;
-				vertex.Normal = vector;
-			}
-
-			if (mesh->mTextureCoords[0]) {
-				glm::vec2 vec;
-				vec.x = mesh->mTextureCoords[0][i].x;
-				vec.y = mesh->mTextureCoords[0][i].y;
-				vertex.TexCoords = vec;
-				// tangent
-				vector.x = mesh->mTangents[i].x;
-				vector.y = mesh->mTangents[i].y;
-				vector.z = mesh->mTangents[i].z;
-				vertex.Tangent = vector;
-				// bitangent
-				vector.x = mesh->mBitangents[i].x;
-				vector.y = mesh->mBitangents[i].y;
-				vector.z = mesh->mBitangents[i].z;
-				vertex.Bitangent = vector;
-			}
-			else
-				vertex.TexCoords = glm::vec2(0.0f, 0.0f);
-			
-
-			vertices.push_back(vertex);
-		}
-
-		// process indices
-		// walk through each of the mesh's faces (a face is a mesh its traingle) and 
-		// retrieve the corresponding vertex indices
-		for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-			aiFace face = mesh->mFaces[i];
-			for (unsigned int j = 0; j < face.mNumIndices; j++)
-				indices.push_back(face.mIndices[j]);
-		}
-
-		// process material
-		if (mesh->mMaterialIndex >= 0) {
-			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-			std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-			std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-			textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-			std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-			textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-
-		}
-
-		Mesh currMesh = Mesh(vertices, indices, textures);
-		return currMesh;
-	}
-
-	std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName) {
-		std::vector<Texture> textures;
-		for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
-			aiString str;
-			mat->GetTexture(type, i, &str);
-			bool skip = false;
-			for (unsigned int j = 0; j < textures_loaded.size(); j++) {
-				if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0) {
-					textures.push_back(textures_loaded[j]);
-					skip = true;
-					break;
+			std::cout << "Num Faces: " << scene->mMeshes[i]->mNumFaces << std::endl;
+			std::cout << "Faces: " << std::endl;
+			for (unsigned int j = 0; j < scene->mMeshes[i]->mNumFaces; j++) {
+				std::cout << "\tNum Indices: " << scene->mMeshes[i]->mFaces[j].mNumIndices << std::endl;
+				for (unsigned int k = 0; k < scene->mMeshes[i]->mFaces[j].mNumIndices; k++) {
+					std::cout << "\t\t" << scene->mMeshes[i]->mFaces[j].mIndices[k] << std::endl;
 				}
 			}
-			if (!skip) {
-				Texture texture;
-				texture.id = TextureFromFile(str.C_Str(), this->directory);
-				texture.type = typeName;
-				texture.path = str.C_Str();
-				textures.push_back(texture);
-				textures_loaded.push_back(texture); 
-			}
 		}
-		return textures;
 	}
 };
-
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma) {
-	std::string filename = std::string(path);
-	filename = directory + '/' + filename;
-
-	unsigned int textureID;
-	glGenTextures(1, &textureID);
-
-	int width, height, nrComponents;
-	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-	if (data) {
-		GLenum format;
-		if (nrComponents == 1)
-			format = GL_RED;
-		else if (nrComponents == 3)
-			format = GL_RGB;
-		else if (nrComponents == 4)
-			format = GL_RGBA;
-
-		glBindTexture(GL_TEXTURE_2D, textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		stbi_image_free(data);
-	}
-	else {
-		std::cout << "Texture failed to load at path: " << path << std::endl;
-		std::cout << "Texture failed to load at path: " << filename << std::endl;
-		stbi_image_free(data);
-	}
-
-	return textureID;
-}

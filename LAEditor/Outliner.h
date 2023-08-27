@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Utilities.h"
-#include "Model2.h"
+#include "Model.h"
 #include "UIElement.h"
 #include "UIArrow.h"
 #include "UIGizmoCenter.h"
@@ -9,16 +9,15 @@
 class Outliner {
 public:
 	Outliner() {}
+	~Outliner() {}
 
-	void init() {
+	void init() {}
 
-	}
-
-	Model2::Model2* getModel(int index) {
+	Model* getModel(int index) {
 		if (index < models.size() && index >= 0)
 			return models[index];
 		std::cout << "ERROR::OUTLINER::getModel - model index out of bounds" << std::endl;
-		Model2::Model2* nullModel = new Model2::Model2;
+		Model* nullModel = new Model;
 		return nullModel;
 	}
 
@@ -30,10 +29,10 @@ public:
 		return nullElement;
 	}
 
-	int getNumModels() { return models.size(); }
-	int getNumUIElements() { return uiElements.size(); }
+	int getNumModels() { return (int)models.size(); }
+	int getNumUIElements() { return (int)uiElements.size(); }
 
-	void addModel(Model2::Model2* model) {
+	void addModel(Model* model) {
 		models.push_back(model);
 	}
 
@@ -46,8 +45,7 @@ public:
 		uiElement->setIndex(getNumUIElements());
 		uiElements.push_back(uiElement);
 	}
-
 private:
-	std::vector<Model2::Model2*> models;
+	std::vector<Model*> models;
 	std::vector<UIElement*> uiElements;
 };

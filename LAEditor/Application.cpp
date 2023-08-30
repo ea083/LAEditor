@@ -72,18 +72,12 @@ void Application::init() {
 	initGui();
 
 	log.Init();
-	//LAE_CORE_WARN("Initialized Log With macro!");
 	log.GetCoreLogger()->warn("Initialized Log!");
 	log.logConsole("initialized again");
-	//int a = 5;
-	//LAE_INFO("Hello! Var={0}", a);
-	//LAE_WARN("THIS IS A WARNING");
-	//LAE_ERROR("THIS IS AN ERROR");
+	log.logConsoleError("error test");
+	log.logConsoleWarning("warning test");
 
-	//actionStateMachine.setState(new ASM::IdleState);
 	setAppPointers();
-
-	//actionStateMachine.init(&idleState, appPointers);
 	actionStateMachine.init(std::make_shared<ASM::IdleState>(), appPointers);
 }
 bool Application::startGLFW()
@@ -136,6 +130,7 @@ void Application::setAppPointers() {
 	appPointers.model = &model;
 	appPointers.camera = &camera;
 	appPointers.window = &window;
+	appPointers.log = &log;
 }
 
 void Application::updateDeltaTime() {

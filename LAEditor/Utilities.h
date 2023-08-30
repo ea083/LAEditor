@@ -19,6 +19,7 @@ class Mouse;
 class Model;
 class Camera;
 class Window;
+class Log;
 
 namespace Utilities {
 
@@ -27,6 +28,7 @@ namespace Utilities {
 		Model* model = nullptr;
 		Camera* camera = nullptr;
 		Window* window = nullptr;
+		Log* log = nullptr;
 	};
 
 	enum axis {

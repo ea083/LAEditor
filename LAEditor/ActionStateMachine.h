@@ -101,18 +101,13 @@ namespace ASM {
 	class IdleState : public State {
 	public:
 		void enter(StateMachine& stateMachine, Utilities::AppPointers appPointers) override {
-			//std::cout << "Entering IdleState" << std::endl;
+
 		}
 		void update(StateMachine& stateMachine, Utilities::AppPointers appPointers) override {
-			//std::cout << "Updating IdleState" << std::endl;
-			/*if (appPointers.window != nullptr) {
-				if (glfwGetKey(appPointers.window->getPointer(), GLFW_KEY_G) == GLFW_PRESS) {
-					//stateMachine.setState(new GrabState);
-				}
-			}*/
+
 		}
 		void exit(StateMachine& stateMachine, Utilities::AppPointers appPointers) override {
-			//std::cout << "Exiting IdleState" << std::endl;
+
 		}
 		std::string getID() override {
 			return "IdleState";
@@ -122,23 +117,26 @@ namespace ASM {
 	class GrabState : public State {
 	public:
 		void enter(StateMachine& stateMachine, Utilities::AppPointers appPointers) override {
-			//std::cout << "Entering GrabState" << std::endl;
 			if (appPointers.model->getNumSelectedVertices() == 0) {
 				stateMachine.setState(std::make_shared<ASM::IdleState>());
 			}
 			else {
 				(appPointers.mouse)->setKeepCursorInFrame(true);
+				console_index = appPointers.log->logConsole("Grabbing: x: 0 y: 0");
+				orig_position = appPointers.model->getSelectedVerticesMedian();
 			}
 		}
 		void update(StateMachine& stateMachine, Utilities::AppPointers appPointers) override {
-			//std::cout << "Updating GrabState" << std::endl;
 			Mouse* mouse = appPointers.mouse;
 			Model* model = appPointers.model;
 			Camera* camera = appPointers.camera;
 			if (Utilities::getCurrentTimeInMS() - mouse->getMovingTime() < 5) {
 				const float cameraDistMultiplier = glm::distance(model->getSelectedVerticesMedian(), camera->Position);
-				model->translateSelectedVertices(mouse->getOffset().y * 0.005, camera->Up);
-				model->translateSelectedVertices(mouse->getOffset().x * 0.005, camera->Right);
+				const float curr_x_offset = mouse->getOffset().y * 0.005;
+				const float curr_y_offset = mouse->getOffset().x * 0.005;
+				model->translateSelectedVertices(curr_x_offset, camera->Up);
+				model->translateSelectedVertices(curr_y_offset, camera->Right);
+				updateConsoleOutput(appPointers);
 			}
 
 			if (inputFlags & xKey) {
@@ -146,11 +144,21 @@ namespace ASM {
 			}
 		}
 		void exit(StateMachine& stateMachine, Utilities::AppPointers appPointers) override {
-			//std::cout << "Exiting GrabState" << std::endl;
 			(appPointers.mouse)->setKeepCursorInFrame(false);
 		}
 		std::string getID() override {
 			return "GrabState";
+		}
+	private:
+		int console_index = 0;
+		glm::vec3 orig_position = glm::vec3(0.0f);
+
+		void updateConsoleOutput(Utilities::AppPointers appPointers) {
+			const glm::vec3 curr_pos = appPointers.model->getSelectedVerticesMedian();
+			const glm::vec3 offset = curr_pos - orig_position;
+			appPointers.log->updateConsole(console_index, "Grabbing x: " + std::to_string(offset.x) +
+				" y: " + std::to_string(offset.y) +
+				" z: " + std::to_string(offset.z));
 		}
 	};
 }

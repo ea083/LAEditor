@@ -56,7 +56,7 @@ struct Console
             free(Items[i]);
         Items.clear();
     }
-    void AddLog(const char* fmt, ...) IM_FMTARGS(2)
+    int AddLog(const char* fmt, ...) IM_FMTARGS(2)
     {
         // FIXME-OPT
         char buf[1024];
@@ -66,6 +66,19 @@ struct Console
         buf[IM_ARRAYSIZE(buf) - 1] = 0;
         va_end(args);
         Items.push_back(Strdup(buf));
+        return Items.size() - 1;
+    }
+
+    void updateLog(int index, const char* fmt, ...) IM_FMTARGS(2)
+    {
+        char buf[1024];
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+        buf[IM_ARRAYSIZE(buf) - 1] = 0;
+        va_end(args);
+        if (index < Items.size()) 
+            Items[index] = Strdup(buf);
     }
     void Draw(const char* title, bool* p_open)
     {
@@ -416,9 +429,15 @@ public:
     using format_string_t = fmt::format_string<Args...>;
 
     template<typename... Args>
-    inline void logConsole(format_string_t<Args...> fmt, Args &&...args) {
+    inline int logConsole(format_string_t<Args...> fmt, Args &&...args) {
         std::string formattedMessage = fmt::format(fmt, std::forward<Args>(args)...);
-        console.AddLog(formattedMessage.c_str());
+        return console.AddLog(formattedMessage.c_str());
+    }
+
+    template<typename... Args>
+    inline void updateConsole(int index, format_string_t<Args...> fmt, Args &&...args) {
+        std::string formattedMessage = fmt::format(fmt, std::forward<Args>(args)...);
+        console.updateLog(index, formattedMessage.c_str());
     }
 
     template<typename... Args>

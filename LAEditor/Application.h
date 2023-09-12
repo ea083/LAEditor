@@ -120,7 +120,6 @@ private:
 	float deltaTime, lastFrame;
 	bool displayUIFramebuffer = false;
 	bool firstClick = true;
-	bool isGrabbing = false;
 
 	// init functions
 	bool startGLFW();

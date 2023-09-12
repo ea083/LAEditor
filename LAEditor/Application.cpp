@@ -161,13 +161,13 @@ void Application::processInput() {
 
 	ASM::ASMInputFlags inputFlags = 0;
 	if (glfwGetKey(window.getPointer(), GLFW_KEY_G) == GLFW_PRESS) {
-		inputFlags = inputFlags | ASM::gKey;//startGrab();
+		inputFlags = inputFlags | ASM::gKey;
 		startGrab();
 	} if (glfwGetKey(window.getPointer(), GLFW_KEY_Q) == GLFW_PRESS) {
-		inputFlags = inputFlags | ASM::qKey;//endAction();
-		endAction();
+		inputFlags = inputFlags | ASM::qKey;
+		//endAction();
 	} if (glfwGetKey(window.getPointer(), GLFW_KEY_X) == GLFW_PRESS) {
-		inputFlags = inputFlags | ASM::xKey;//endAction();
+		inputFlags = inputFlags | ASM::xKey;
 	}
 	actionStateMachine.setFlags(inputFlags);
 }
@@ -347,6 +347,7 @@ void Application::showDebugGui() {
 	mouse.degbug();
 	actionStateMachine.debug();
 	//Log::debug();
+	model.debug();
 	ImGui::Checkbox("Show UI Framebuffer", &displayUIFramebuffer);
 	ImGui::End();
 }
@@ -361,6 +362,9 @@ void Application::processGuiInput() {
 			(float)window.getViewerSize().y,
 			(float)window.getBufferSize().x,
 			(float)window.getBufferSize().y);
+		log.logConsole("R: " + std::to_string(pixelData.r) +
+			" G: " + std::to_string(pixelData.g) +
+			" B: " + std::to_string(pixelData.b));
 		if (pixelData.g == 1.0f) { // UI Elements
 			UIElement* uiElement = outliner.getUIElement((int)(pixelData.r - 1));
 			Utilities::UIElementType type = uiElement->getType();
@@ -386,9 +390,6 @@ void Application::processGuiInput() {
 			outliner.getUIElement(i)->setIsHighlighted(false);
 		}
 	}
-
-	if (isGrabbing)
-		grab();
 }
 void Application::runCurrentState() {
 	//std::cout << "Running current state" << std::endl;

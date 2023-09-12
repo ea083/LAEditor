@@ -112,9 +112,20 @@ public:
 		for (int i = 0; i < selectedVerticesIndices.size(); i++) {
 			const int currIndex = selectedVerticesIndices[i];
 			vertices[currIndex].Position += delta;
-			for (int j = 0; j < vertices[currIndex].connectedVerts.size(); j++)
-				vertices[currIndex].connectedVerts[j]->Position += delta;
+			//for (int j = 0; j < vertices[currIndex].connectedVerts.size(); j++)
+			//	vertices[currIndex].connectedVerts[j]->Position += delta;
 
+		}
+		setVAO();
+		setSelectedVerticeVAO();
+	}
+
+	void setSelectedVerticesMedianPos(glm::vec3 new_pos) {
+		const glm::vec3 old_pos = getSelectedVerticesMedian();
+		const glm::vec3 delta = new_pos - old_pos;
+		for (int i = 0; i < selectedVerticesIndices.size(); i++) {
+			const int currIndex = selectedVerticesIndices[i];
+			vertices[currIndex].Position += delta;
 		}
 		setVAO();
 		setSelectedVerticeVAO();
@@ -160,6 +171,31 @@ public:
 		return (int)edgeIndices.size();
 	}
 	std::string getName() { return name; }
+
+	void debug() {
+		if (ImGui::TreeNode("Model")) {
+			if (ImGui::TreeNode("Vertices")) {
+				if (Utilities::startDebugTable("Vertices", "Index", "Value")) {
+					for (int i = 0; i < vertices.size(); i++) {
+						Utilities::nameVariableDebugTable(vertices[i].Position, i + " position");
+						Utilities::nameVariableDebugTable(vertices[i].Normal, i + " normal");
+					}
+					ImGui::EndTable();
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Selected Vertices Indices")) {
+				if (Utilities::startDebugTable("Vertices", "Index", "Value")) {
+					for (int i = 0; i < selectedVerticesIndices.size(); i++) {
+						Utilities::nameVariableDebugTable(selectedVerticesIndices[i], std::to_string(i));
+					}
+					ImGui::EndTable();
+				}
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
+	}
 
 private:
 	std::string directory;

@@ -9,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -92,6 +93,16 @@ namespace Utilities {
 		std::string addressString = stream.str();
 		addressString = "0x" + addressString;
 		ImGui::TextUnformatted(addressString.c_str());
+	}
+	void nameVariableDebugTable(glm::vec3 varVal, std::string varName) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted(varName.c_str());
+		ImGui::TableSetColumnIndex(1);
+		std::string output = "x: " + std::to_string(varVal.x) + 
+			"y: " + std::to_string(varVal.y) + 
+			"z: " + std::to_string(varVal.z);
+		ImGui::TextUnformatted(output.c_str());
 	}
 	void nameVariableDebugTable(std::string varVal, std::string varName) {
 		ImGui::TableNextRow();

@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\include;D:\LAEditor\ExternalFiles\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\lib;D:\LAEditor\ExternalFiles\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\include;D:\LAEditor\ExternalFiles\include;C:\Users\evana\Documents\OpenGLProjects\ExternalFiles\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\evana\Documents\OpenGLProjects\ExternalFiles\lib;D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\lib;D:\LAEditor\ExternalFiles\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>D:\LAEditor\vcpkg\vcpkg\installed\x64-windows\include;D:\LAEditor\ExternalFiles\include;$(IncludePath)</IncludePath>
@@ -112,7 +112,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\LAEditor\LAEditor0.2\tinyFileDialogs;D:\LAEditor\LAEditor0.2\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\LAEditor\LAEditor0.2\tinyFileDialogs;C:\Users\evana\Documents\OpenGLProjects\LAEditor\imgui;D:\LAEditor\LAEditor0.2\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -118,6 +118,7 @@ void Application::loadShaders() {
 	gizmoShader = Shader("gizmo.vert", "gizmo.frag");
 	uiElementDataShader = Shader("uiElementData.vert", "uiElementData.frag");
 }
+
 void Application::loadModel() {
 	loadModel("test.obj");
 }
@@ -131,6 +132,8 @@ void Application::setAppPointers() {
 	appPointers.camera = &camera;
 	appPointers.window = &window;
 	appPointers.log = &log;
+	appPointers.verticeDataFramebuffer = &verticeDataFramebuffer;
+	appPointers.outliner = &outliner;
 }
 
 void Application::updateDeltaTime() {
@@ -162,14 +165,29 @@ void Application::processInput() {
 	ASM::ASMInputFlags inputFlags = 0;
 	if (glfwGetKey(window.getPointer(), GLFW_KEY_G) == GLFW_PRESS) {
 		inputFlags = inputFlags | ASM::gKey;
-		startGrab();
+		//setGrabState();
 	} if (glfwGetKey(window.getPointer(), GLFW_KEY_Q) == GLFW_PRESS) {
 		inputFlags = inputFlags | ASM::qKey;
 		//endAction();
-	} if (glfwGetKey(window.getPointer(), GLFW_KEY_X) == GLFW_PRESS) {
+	} if (glfwGetKey(window.getPointer(), GLFW_KEY_X) == GLFW_PRESS)
 		inputFlags = inputFlags | ASM::xKey;
-	}
+	if (glfwGetKey(window.getPointer(), GLFW_KEY_Y) == GLFW_PRESS)
+		inputFlags = inputFlags | ASM::yKey;
+	if (glfwGetKey(window.getPointer(), GLFW_KEY_Z) == GLFW_PRESS)
+		inputFlags = inputFlags | ASM::zKey;
+	if (glfwGetKey(window.getPointer(), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		inputFlags = inputFlags | ASM::shiftKey;
+	if (mouse.getisLMBPressed())
+		inputFlags = inputFlags | ASM::m1Key;
+	if (glfwGetKey(window.getPointer(), GLFW_KEY_S) == GLFW_PRESS)
+		inputFlags = inputFlags | ASM::sKey;
 	actionStateMachine.setFlags(inputFlags);
+
+
+	// TEMP
+	if (glfwGetKey(window.getPointer(), GLFW_KEY_O) == GLFW_PRESS) {
+		camera.canOrbit = !camera.canOrbit;
+	}
 }
 void Application::renderModel() {
 	mats.projection = glm::perspective(glm::radians(camera.Zoom), (float)window.getViewerSize().x / (float)window.getViewerSize().y, 0.1f, 100.0f);
@@ -352,9 +370,11 @@ void Application::showDebugGui() {
 	ImGui::End();
 }
 void Application::processGuiInput() {
+	// TODO: rework this to be more adaptive with state machine
+	// TODO: ACTUALLY DO THAT ^
+	/*
 	if (mouse.getisLMBPressed() && firstClick) {
 		firstClick = false;
-		std::cout << "FirstClick" << std::endl;
 		Utilities::PixelData pixelData = verticeDataFramebuffer.getDataAtPixel(
 			mouse.getxPos(),
 			mouse.getyPos(),
@@ -390,6 +410,7 @@ void Application::processGuiInput() {
 			outliner.getUIElement(i)->setIsHighlighted(false);
 		}
 	}
+	*/
 }
 void Application::runCurrentState() {
 	//std::cout << "Running current state" << std::endl;
@@ -638,7 +659,7 @@ void Application::show3DViewer() {
 	ImGui::End();
 }
 
-void Application::startGrab() {
+void Application::setGrabState() {
 	// TODO: have the state check for this, not like this
 	actionStateMachine.setState(std::make_shared<ASM::GrabState>());
 }
@@ -902,7 +923,6 @@ void Application::mouseButtonCallback(GLFWwindow* window, int button, int action
 		}
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			mouse.setisLMBPressed(action == GLFW_PRESS);
-
 		}
 	}
 }

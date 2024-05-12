@@ -4,7 +4,6 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-
 #include <memory>
 #include <windows.h>
 #include <commdlg.h>
@@ -85,6 +84,7 @@ public:
 	void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 	void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
+	void setGrabState();
 private:
 	Log log;
 
@@ -153,7 +153,6 @@ private:
 	void show3DViewer();
 
 	// user Actions
-	void startGrab();
 	void endAction();
 	//legacy actions
 	void grab();

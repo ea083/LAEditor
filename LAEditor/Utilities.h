@@ -21,6 +21,8 @@ class Model;
 class Camera;
 class Window;
 class Log;
+class VerticeDataFramebuffer;
+class Outliner;
 
 namespace Utilities {
 
@@ -30,7 +32,14 @@ namespace Utilities {
 		Camera* camera = nullptr;
 		Window* window = nullptr;
 		Log* log = nullptr;
+		VerticeDataFramebuffer* verticeDataFramebuffer = nullptr;
+		Outliner* outliner = nullptr;
 	};
+
+	template <class T>
+	std::shared_ptr<T> makeStatePtr() {
+		return std::make_shared<T>();
+	}
 
 	enum axis {
 		X,

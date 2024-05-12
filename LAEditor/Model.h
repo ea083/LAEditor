@@ -14,6 +14,8 @@
 #include "GLUtilities.h"
 #include "Shader.h"
 
+#include <glm/gtx/string_cast.hpp>
+
 //#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 //#include <CGAL/Delaunay_triangulation_3.h>
 //
@@ -96,6 +98,25 @@ public:
 
 		setSelectedVerticeVAO();
 	}
+	void addSelectedVertices(Utilities::PixelData pixelData) {
+		int index = (int)(pixelData.r - 1);
+		if (index < 0 || index > vertices.size()) {
+			std::cout << "ERROR::MODEL::Selected vertice out of range!" << std::endl;
+			return;
+		}
+		for (int i = 0; i < selectedVerticesIndices.size(); i++) {
+			if (selectedVerticesIndices[i] == index) {
+				std::cout << "ERROR::MODEL::Attempting to select already selected vertice!" << std::endl;
+				return;
+			}
+		}
+		selectedVerticesIndices.push_back(index);
+		for (int i = 0; i < vertices[index].connectedVertsIndices.size(); i++)
+			selectedVerticesIndices.push_back(vertices[index].connectedVertsIndices[i]);
+
+		setSelectedVerticeVAO();
+	}
+
 	int getNumSelectedVertices() {
 		return (int)selectedVerticesIndices.size();
 	}
@@ -118,6 +139,16 @@ public:
 		}
 		setVAO();
 		setSelectedVerticeVAO();
+	}
+
+	void scaleSelectedVertices(float scale, glm::vec3 axis) {
+		const glm::vec3 delta = scale * glm::normalize(axis);
+		for (int i = 0; i < selectedVerticesIndices.size(); i++) {
+			const int currIndex = selectedVerticesIndices[i];
+			glm::mat4 scaleMatrix = glm::mat4(1.0f);
+			scaleMatrix = glm::scale(scaleMatrix, delta);
+			std::cout << "Scale: " << glm::to_string(scaleMatrix) << std::endl;
+		}
 	}
 
 	void setSelectedVerticesMedianPos(glm::vec3 new_pos) {
